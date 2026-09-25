@@ -438,6 +438,7 @@ export interface InventoryItem {
   minStockLevel: string;
   maxStockLevel: string | null;
   primaryStoreLocationId: string | null;
+  notes: string | null;
   isActive: boolean;
   category?: InventoryCategory;
   baseUnit?: UnitOfMeasure;

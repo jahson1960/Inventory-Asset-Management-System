@@ -14,7 +14,6 @@ import type {
   Supplier,
   UnitOfMeasure,
 } from '@/lib/types';
-import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardBody } from '@/components/ui/card';
 import { Field, Input, Label, Select, Textarea } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -23,6 +22,20 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { QuickCreateCategoryModal } from '@/components/quick-create-category-modal';
 import { QuickCreateLocationModal } from '@/components/quick-create-location-modal';
 import { QuickCreateSupplierModal } from '@/components/quick-create-supplier-modal';
+import { FormPageHeader, IconInput, Required, SectionHeader } from '@/components/ui/form-section';
+import {
+  BanknoteIcon,
+  BarcodeIcon,
+  BoxIcon,
+  BuildingIcon,
+  FileTextIcon,
+  FolderIcon,
+  SaveIcon,
+  StoreIcon,
+  TagIcon,
+  UserIcon,
+  XIcon,
+} from '@/components/icons/form-icons';
 
 export default function NewInventoryItemPage() {
   const router = useRouter();
@@ -58,6 +71,7 @@ export default function NewInventoryItemPage() {
   const [unitCost, setUnitCost] = useState('');
   const [minStockLevel, setMinStockLevel] = useState('0');
   const [primaryStoreLocationId, setPrimaryStoreLocationId] = useState('');
+  const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const confirm = useConfirm();
@@ -81,6 +95,7 @@ export default function NewInventoryItemPage() {
         unitCost: unitCost ? Number(unitCost) : undefined,
         minStockLevel: Number(minStockLevel),
         primaryStoreLocationId: primaryStoreLocationId || undefined,
+        notes: notes || undefined,
       });
       router.push(`/inventory/${item.id}`);
     } catch (err) {
@@ -91,37 +106,86 @@ export default function NewInventoryItemPage() {
   }
 
   return (
-    <div className="max-w-2xl">
-      <PageHeader title="New Inventory Item" description="Add an item to the consumable inventory catalogue." />
+    <div className="max-w-4xl">
+      <FormPageHeader
+        icon={<BoxIcon className="h-7 w-7" />}
+        title="New Inventory Item"
+        description="Add an item to the consumable inventory catalogue."
+        breadcrumb={[{ label: 'Inventory', href: '/inventory' }, { label: 'New Item' }]}
+      />
 
-      <Card>
-        <CardBody>
-          {error && <ErrorAlert message={error} />}
-          <form onSubmit={onSubmit}>
+      {error && <ErrorAlert message={error} />}
+
+      <form onSubmit={onSubmit}>
+        <Card className="mb-4">
+          <CardBody>
+            <SectionHeader number={1} title="Item Information" description="Provide the basic details of the inventory item." />
+
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <Label htmlFor="itemCode">Item code / SKU</Label>
-                <Input id="itemCode" required value={itemCode} onChange={(e) => setItemCode(e.target.value)} />
+                <Label htmlFor="itemCode">
+                  Item code / SKU <Required />
+                </Label>
+                <IconInput icon={<BarcodeIcon className="h-4 w-4" />}>
+                  <Input
+                    id="itemCode"
+                    required
+                    placeholder="e.g. FA-00123"
+                    className="pl-9"
+                    value={itemCode}
+                    onChange={(e) => setItemCode(e.target.value)}
+                  />
+                </IconInput>
               </Field>
               <Field>
                 <Label htmlFor="barcode">Barcode (optional)</Label>
-                <Input id="barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
+                <IconInput icon={<BarcodeIcon className="h-4 w-4" />}>
+                  <Input
+                    id="barcode"
+                    placeholder="Scan or enter barcode"
+                    className="pl-9"
+                    value={barcode}
+                    onChange={(e) => setBarcode(e.target.value)}
+                  />
+                </IconInput>
               </Field>
             </div>
 
             <Field>
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
+              <Label htmlFor="name">
+                Name <Required />
+              </Label>
+              <IconInput icon={<TagIcon className="h-4 w-4" />}>
+                <Input
+                  id="name"
+                  required
+                  placeholder="Enter item name"
+                  className="pl-9"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </IconInput>
             </Field>
 
             <Field>
               <Label htmlFor="description">Description</Label>
-              <Textarea id="description" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+              <IconInput icon={<FileTextIcon className="h-4 w-4" />} align="top">
+                <Textarea
+                  id="description"
+                  rows={2}
+                  placeholder="Enter item description…"
+                  className="pl-9"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </IconInput>
             </Field>
 
             <Field>
               <div className="mb-1 flex items-center justify-between">
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category">
+                  Category <Required />
+                </Label>
                 {canQuickCreateCategory && (
                   <button
                     type="button"
@@ -132,33 +196,57 @@ export default function NewInventoryItemPage() {
                   </button>
                 )}
               </div>
-              <Select id="category" required value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                <option value="">Select category</option>
-                {(categories ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
+              <IconInput icon={<FolderIcon className="h-4 w-4" />}>
+                <Select id="category" required className="pl-9" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                  <option value="">Select category</option>
+                  {(categories ?? []).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </Select>
+              </IconInput>
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <Label htmlFor="baseUnit">Base unit</Label>
-                <Select id="baseUnit" required value={baseUnitId} onChange={(e) => setBaseUnitId(e.target.value)}>
-                  <option value="">Select unit</option>
-                  {(units ?? []).map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name} ({u.code})
-                    </option>
-                  ))}
-                </Select>
+                <Label htmlFor="baseUnit">
+                  Base unit <Required />
+                </Label>
+                <IconInput icon={<BoxIcon className="h-4 w-4" />}>
+                  <Select id="baseUnit" required className="pl-9" value={baseUnitId} onChange={(e) => setBaseUnitId(e.target.value)}>
+                    <option value="">Select unit</option>
+                    {(units ?? []).map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name} ({u.code})
+                      </option>
+                    ))}
+                  </Select>
+                </IconInput>
               </Field>
               <Field>
                 <Label htmlFor="brand">Brand</Label>
-                <Input id="brand" value={brand} onChange={(e) => setBrand(e.target.value)} />
+                <IconInput icon={<BuildingIcon className="h-4 w-4" />}>
+                  <Input
+                    id="brand"
+                    placeholder="Enter brand (optional)"
+                    className="pl-9"
+                    value={brand}
+                    onChange={(e) => setBrand(e.target.value)}
+                  />
+                </IconInput>
               </Field>
             </div>
+          </CardBody>
+        </Card>
+
+        <Card className="mb-4">
+          <CardBody>
+            <SectionHeader
+              number={2}
+              title="Stock & Supplier Details"
+              description="Set the stock level and supplier information for this item."
+            />
 
             <Field>
               <div className="mb-1 flex items-center justify-between">
@@ -173,35 +261,53 @@ export default function NewInventoryItemPage() {
                   </button>
                 )}
               </div>
-              <Select
-                id="primaryStore"
-                value={primaryStoreLocationId}
-                onChange={(e) => setPrimaryStoreLocationId(e.target.value)}
-              >
-                <option value="">None</option>
-                {(locations ?? []).map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </Select>
+              <IconInput icon={<StoreIcon className="h-4 w-4" />}>
+                <Select
+                  id="primaryStore"
+                  className="pl-9"
+                  value={primaryStoreLocationId}
+                  onChange={(e) => setPrimaryStoreLocationId(e.target.value)}
+                >
+                  <option value="">None</option>
+                  {(locations ?? []).map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
+                </Select>
+              </IconInput>
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
               <Field>
                 <Label htmlFor="unitCost">Unit cost</Label>
-                <Input id="unitCost" type="number" min="0" step="0.01" value={unitCost} onChange={(e) => setUnitCost(e.target.value)} />
+                <IconInput icon={<BanknoteIcon className="h-4 w-4" />}>
+                  <Input
+                    id="unitCost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter unit cost"
+                    className="pl-9"
+                    value={unitCost}
+                    onChange={(e) => setUnitCost(e.target.value)}
+                  />
+                </IconInput>
               </Field>
               <Field>
                 <Label htmlFor="minStockLevel">Min / reorder level</Label>
-                <Input
-                  id="minStockLevel"
-                  type="number"
-                  min="0"
-                  step="0.001"
-                  value={minStockLevel}
-                  onChange={(e) => setMinStockLevel(e.target.value)}
-                />
+                <IconInput icon={<BoxIcon className="h-4 w-4" />}>
+                  <Input
+                    id="minStockLevel"
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    placeholder="Enter minimum level"
+                    className="pl-9"
+                    value={minStockLevel}
+                    onChange={(e) => setMinStockLevel(e.target.value)}
+                  />
+                </IconInput>
               </Field>
             </div>
 
@@ -218,26 +324,53 @@ export default function NewInventoryItemPage() {
                   </button>
                 )}
               </div>
-              <Select id="preferredSupplier" value={preferredSupplier} onChange={(e) => setPreferredSupplier(e.target.value)}>
-                <option value="">Select supplier</option>
-                {(suppliers ?? [])
-                  .filter((s) => s.isActive)
-                  .map((s) => (
-                    <option key={s.id} value={s.name}>
-                      {s.name}
-                    </option>
-                  ))}
-              </Select>
+              <IconInput icon={<UserIcon className="h-4 w-4" />}>
+                <Select id="preferredSupplier" className="pl-9" value={preferredSupplier} onChange={(e) => setPreferredSupplier(e.target.value)}>
+                  <option value="">Select supplier</option>
+                  {(suppliers ?? [])
+                    .filter((s) => s.isActive)
+                    .map((s) => (
+                      <option key={s.id} value={s.name}>
+                        {s.name}
+                      </option>
+                    ))}
+                </Select>
+              </IconInput>
+            </Field>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardBody>
+            <SectionHeader number={3} title="Additional Information" description="(Optional) Add any extra notes or details about the item." />
+
+            <Field>
+              <Label htmlFor="notes">Notes</Label>
+              <IconInput icon={<FileTextIcon className="h-4 w-4" />} align="top">
+                <Textarea
+                  id="notes"
+                  rows={3}
+                  placeholder="Any additional notes…"
+                  className="pl-9"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </IconInput>
             </Field>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+              <Button type="button" variant="secondary" onClick={() => router.push('/inventory')}>
+                <XIcon className="h-4 w-4" />
+                Cancel
+              </Button>
               <Button type="submit" disabled={submitting}>
+                <SaveIcon className="h-4 w-4" />
                 {submitting ? 'Saving…' : 'Create Item'}
               </Button>
             </div>
-          </form>
-        </CardBody>
-      </Card>
+          </CardBody>
+        </Card>
+      </form>
 
       <QuickCreateCategoryModal
         kind="inventory"

@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { useAuth } from '@/contexts/auth-context';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -26,17 +25,16 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { QuickCreateCategoryModal } from '@/components/quick-create-category-modal';
 import { QuickCreateLocationModal } from '@/components/quick-create-location-modal';
 import { QuickCreateSupplierModal } from '@/components/quick-create-supplier-modal';
+import { FormPageHeader, IconInput, Required, SectionHeader } from '@/components/ui/form-section';
 import {
   BanknoteIcon,
   BarcodeIcon,
   BoxIcon,
   BuildingIcon,
   CalendarIcon,
-  ChevronRightIcon,
   ClockIcon,
   FileTextIcon,
   HeartIcon,
-  HomeIcon,
   LayersIcon,
   ListIcon,
   MapPinIcon,
@@ -137,25 +135,12 @@ export default function NewAssetPage() {
 
   return (
     <div className="max-w-4xl">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-navy text-white">
-            <MonitorIcon className="h-7 w-7" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-navy">Register New Asset</h1>
-            <p className="mt-1 text-sm text-slate-500">Register a fixed asset or controlled equipment item.</p>
-          </div>
-        </div>
-        <nav className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 shadow-sm">
-          <HomeIcon className="h-3.5 w-3.5" />
-          <Link href="/assets" className="hover:text-gold-dark">
-            Assets
-          </Link>
-          <ChevronRightIcon className="h-3 w-3" />
-          <span className="font-medium text-slate-700">New Asset</span>
-        </nav>
-      </div>
+      <FormPageHeader
+        icon={<MonitorIcon className="h-7 w-7" />}
+        title="Register New Asset"
+        description="Register a fixed asset or controlled equipment item."
+        breadcrumb={[{ label: 'Assets', href: '/assets' }, { label: 'New Asset' }]}
+      />
 
       {error && <ErrorAlert message={error} />}
 
@@ -576,38 +561,6 @@ export default function NewAssetPage() {
           setSupplier(newSupplier.name);
         }}
       />
-    </div>
-  );
-}
-
-function SectionHeader({ number, title }: { number: number; title: string }) {
-  return (
-    <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold text-sm font-bold text-white">
-        {number}
-      </span>
-      <h2 className="text-base font-bold text-navy">{title}</h2>
-    </div>
-  );
-}
-
-function Required() {
-  return <span className="text-red-500">*</span>;
-}
-
-function IconInput({ icon, align = 'center', children }: { icon: ReactNode; align?: 'center' | 'top'; children: ReactNode }) {
-  return (
-    <div className="relative">
-      <span
-        className={
-          align === 'top'
-            ? 'pointer-events-none absolute left-3 top-3 text-slate-400'
-            : 'pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400'
-        }
-      >
-        {icon}
-      </span>
-      {children}
     </div>
   );
 }
