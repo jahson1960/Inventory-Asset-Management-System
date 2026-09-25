@@ -60,6 +60,7 @@ const NAV_KEYS: { key: string; label: string }[] = [
   { key: 'nav.auditLog', label: 'Audit Log' },
   { key: 'nav.settingsWorkflows', label: 'Settings → Approval Workflows' },
   { key: 'nav.settingsEmail', label: 'Settings → Email (SMTP)' },
+  { key: 'nav.settingsEmailTemplates', label: 'Settings → Email Templates' },
   { key: 'nav.settingsDepreciation', label: 'Settings → Depreciation' },
   { key: 'nav.settingsDisplay', label: 'Settings → Display' },
 ];

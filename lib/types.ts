@@ -184,6 +184,19 @@ export interface SmtpSettingsRecord {
   isConfigured: boolean;
 }
 
+export interface EmailTemplateRecord {
+  key: string;
+  category: string;
+  name: string;
+  placeholders: string[];
+  defaultSubject: string;
+  defaultBody: string;
+  subject: string;
+  body: string;
+  isCustomized: boolean;
+  updatedAt: string | null;
+}
+
 // Phase 4 — depreciation
 
 export type DepreciationMethod = 'STRAIGHT_LINE' | 'REDUCING_BALANCE';

@@ -52,6 +52,25 @@ export default function UsersPage() {
     refetch();
   }
 
+  async function activate(id: string) {
+    const ok = await confirmAction({ title: 'Activate this user?', message: 'They will be able to sign in again.' });
+    if (!ok) return;
+    await api.patch(`/users/${id}/activate`);
+    refetch();
+  }
+
+  async function resetPassword(u: UserRow) {
+    const ok = await confirmAction({
+      title: `Reset ${u.firstName} ${u.lastName}'s password?`,
+      message: 'A new random temporary password will be emailed to them; they must change it on next login.',
+    });
+    if (!ok) return;
+    const result = await api.patch<{ emailSent: boolean; temporaryPassword?: string }>(`/users/${u.id}/reset-password`);
+    if (!result.emailSent && result.temporaryPassword) {
+      setRevealedPassword({ email: u.email, password: result.temporaryPassword });
+    }
+  }
+
   return (
     <div>
       <PageHeader
@@ -111,14 +130,29 @@ export default function UsersPage() {
                     </button>
                   </Td>
                   <Td>
-                    {u.isActive && (
+                    <div className="flex items-center gap-3">
                       <button
-                        onClick={() => deactivate(u.id)}
-                        className="text-xs font-medium text-red-600 hover:text-red-800"
+                        onClick={() => resetPassword(u)}
+                        className="text-xs font-medium text-slate-600 hover:text-slate-900"
                       >
-                        Deactivate
+                        Reset password
                       </button>
-                    )}
+                      {u.isActive ? (
+                        <button
+                          onClick={() => deactivate(u.id)}
+                          className="text-xs font-medium text-red-600 hover:text-red-800"
+                        >
+                          Deactivate
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => activate(u.id)}
+                          className="text-xs font-medium text-emerald-600 hover:text-emerald-800"
+                        >
+                          Activate
+                        </button>
+                      )}
+                    </div>
                   </Td>
                 </Tr>
               ))}
@@ -246,8 +280,8 @@ function RevealedPasswordModal({
   return (
     <Modal open={Boolean(info)} onClose={onClose} title="Couldn't email the temporary password">
       <p className="mb-3 text-sm text-slate-600">
-        The account for <span className="font-medium text-slate-900">{info?.email}</span> was created, but the
-        notification email could not be sent (check SMTP settings). Share this temporary password with them
+        A new temporary password was set for <span className="font-medium text-slate-900">{info?.email}</span>, but
+        the notification email could not be sent (check SMTP settings). Share this temporary password with them
         directly — it will not be shown again.
       </p>
       <p className="mb-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-sm text-slate-900">

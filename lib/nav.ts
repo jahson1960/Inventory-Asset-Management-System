@@ -89,6 +89,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Approval Workflows', href: '/settings/workflows', permission: 'nav.settingsWorkflows' },
       { label: 'Email (SMTP)', href: '/settings/email', permission: 'nav.settingsEmail' },
+      { label: 'Email Templates', href: '/settings/email-templates', permission: 'nav.settingsEmailTemplates' },
       { label: 'Depreciation', href: '/settings/depreciation', permission: 'nav.settingsDepreciation' },
       { label: 'Display', href: '/settings/display', permission: 'nav.settingsDisplay' },
       { label: 'Roles & Permissions', href: '/settings/permissions', roles: ['SUPER_ADMIN'] },
