@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { useAuth } from '@/contexts/auth-context';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -17,7 +18,6 @@ import type {
   Paginated,
   Supplier,
 } from '@/lib/types';
-import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardBody } from '@/components/ui/card';
 import { Field, Input, Label, Select, Textarea } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,29 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { QuickCreateCategoryModal } from '@/components/quick-create-category-modal';
 import { QuickCreateLocationModal } from '@/components/quick-create-location-modal';
 import { QuickCreateSupplierModal } from '@/components/quick-create-supplier-modal';
+import {
+  BanknoteIcon,
+  BarcodeIcon,
+  BoxIcon,
+  BuildingIcon,
+  CalendarIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  FileTextIcon,
+  HeartIcon,
+  HomeIcon,
+  LayersIcon,
+  ListIcon,
+  MapPinIcon,
+  MonitorIcon,
+  SaveIcon,
+  ShieldIcon,
+  SmartphoneIcon,
+  TagIcon,
+  TypeIcon,
+  UserIcon,
+  XIcon,
+} from '@/components/icons/form-icons';
 
 const TRACKING_TYPES: AssetTrackingType[] = ['FIXED_ASSET', 'CONTROLLED_EQUIPMENT'];
 const CONDITIONS: AssetCondition[] = ['NEW', 'GOOD', 'FAIR', 'POOR', 'DAMAGED'];
@@ -113,42 +136,92 @@ export default function NewAssetPage() {
   }
 
   return (
-    <div className="max-w-2xl">
-      <PageHeader title="New Asset" description="Register a fixed asset or controlled equipment item." />
+    <div className="max-w-4xl">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-navy text-white">
+            <MonitorIcon className="h-7 w-7" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-navy">Register New Asset</h1>
+            <p className="mt-1 text-sm text-slate-500">Register a fixed asset or controlled equipment item.</p>
+          </div>
+        </div>
+        <nav className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 shadow-sm">
+          <HomeIcon className="h-3.5 w-3.5" />
+          <Link href="/assets" className="hover:text-gold-dark">
+            Assets
+          </Link>
+          <ChevronRightIcon className="h-3 w-3" />
+          <span className="font-medium text-slate-700">New Asset</span>
+        </nav>
+      </div>
 
-      <Card>
-        <CardBody>
-          {error && <ErrorAlert message={error} />}
-          <form onSubmit={onSubmit}>
+      {error && <ErrorAlert message={error} />}
+
+      <form onSubmit={onSubmit}>
+        <Card className="mb-4">
+          <CardBody>
+            <SectionHeader number={1} title="Asset Details" />
+
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <Label htmlFor="assetTag">Asset tag</Label>
-                <Input id="assetTag" required value={assetTag} onChange={(e) => setAssetTag(e.target.value)} />
+                <Label htmlFor="assetTag">
+                  Asset tag <Required />
+                </Label>
+                <IconInput icon={<TagIcon className="h-4 w-4" />}>
+                  <Input
+                    id="assetTag"
+                    required
+                    placeholder="e.g. FA-00123"
+                    className="pl-9"
+                    value={assetTag}
+                    onChange={(e) => setAssetTag(e.target.value)}
+                  />
+                </IconInput>
               </Field>
               <Field>
-                <Label htmlFor="trackingType">Tracking type</Label>
-                <Select
-                  id="trackingType"
-                  value={trackingType}
-                  onChange={(e) => setTrackingType(e.target.value as AssetTrackingType)}
-                >
-                  {TRACKING_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t.replace('_', ' ')}
-                    </option>
-                  ))}
-                </Select>
+                <Label htmlFor="trackingType">
+                  Tracking type <Required />
+                </Label>
+                <IconInput icon={<BoxIcon className="h-4 w-4" />}>
+                  <Select
+                    id="trackingType"
+                    className="pl-9"
+                    value={trackingType}
+                    onChange={(e) => setTrackingType(e.target.value as AssetTrackingType)}
+                  >
+                    {TRACKING_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {t.replace('_', ' ')}
+                      </option>
+                    ))}
+                  </Select>
+                </IconInput>
               </Field>
             </div>
 
             <Field>
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
+              <Label htmlFor="name">
+                Name <Required />
+              </Label>
+              <IconInput icon={<TypeIcon className="h-4 w-4" />}>
+                <Input
+                  id="name"
+                  required
+                  placeholder="Enter asset name"
+                  className="pl-9"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </IconInput>
             </Field>
 
             <Field>
               <div className="mb-1 flex items-center justify-between">
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category">
+                  Category <Required />
+                </Label>
                 {canQuickCreateCategory && (
                   <button
                     type="button"
@@ -159,19 +232,23 @@ export default function NewAssetPage() {
                   </button>
                 )}
               </div>
-              <Select id="category" required value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                <option value="">Select category</option>
-                {(categories ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
+              <IconInput icon={<ListIcon className="h-4 w-4" />}>
+                <Select id="category" required className="pl-9" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                  <option value="">Select category</option>
+                  {(categories ?? []).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </Select>
+              </IconInput>
             </Field>
 
             <Field>
               <div className="mb-1 flex items-center justify-between">
-                <Label htmlFor="location">Current location</Label>
+                <Label htmlFor="location">
+                  Current location <Required />
+                </Label>
                 {canQuickCreateLocation && (
                   <button
                     type="button"
@@ -182,62 +259,104 @@ export default function NewAssetPage() {
                   </button>
                 )}
               </div>
-              <Select
-                id="location"
-                required
-                value={currentLocationId}
-                onChange={(e) => setCurrentLocationId(e.target.value)}
-              >
-                <option value="">Select location</option>
-                {(locations ?? []).map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name} ({l.type})
-                  </option>
-                ))}
-              </Select>
+              <IconInput icon={<MapPinIcon className="h-4 w-4" />}>
+                <Select
+                  id="location"
+                  required
+                  className="pl-9"
+                  value={currentLocationId}
+                  onChange={(e) => setCurrentLocationId(e.target.value)}
+                >
+                  <option value="">Select location</option>
+                  {(locations ?? []).map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name} ({l.type})
+                    </option>
+                  ))}
+                </Select>
+              </IconInput>
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
               <Field>
                 <Label htmlFor="brand">Brand</Label>
-                <Input id="brand" value={brand} onChange={(e) => setBrand(e.target.value)} />
+                <IconInput icon={<BuildingIcon className="h-4 w-4" />}>
+                  <Input
+                    id="brand"
+                    placeholder="Enter brand"
+                    className="pl-9"
+                    value={brand}
+                    onChange={(e) => setBrand(e.target.value)}
+                  />
+                </IconInput>
               </Field>
               <Field>
                 <Label htmlFor="model">Model</Label>
-                <Input id="model" value={model} onChange={(e) => setModel(e.target.value)} />
+                <IconInput icon={<SmartphoneIcon className="h-4 w-4" />}>
+                  <Input
+                    id="model"
+                    placeholder="Enter model"
+                    className="pl-9"
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                  />
+                </IconInput>
               </Field>
             </div>
 
             <Field>
               <Label htmlFor="serialNumber">Serial number</Label>
-              <Input id="serialNumber" value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)} />
+              <IconInput icon={<BarcodeIcon className="h-4 w-4" />}>
+                <Input
+                  id="serialNumber"
+                  placeholder="Enter serial number"
+                  className="pl-9"
+                  value={serialNumber}
+                  onChange={(e) => setSerialNumber(e.target.value)}
+                />
+              </IconInput>
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
               <Field>
                 <Label htmlFor="purchaseDate">Purchase date</Label>
-                <Input
-                  id="purchaseDate"
-                  type="date"
-                  value={purchaseDate}
-                  onChange={(e) => setPurchaseDate(e.target.value)}
-                />
+                <IconInput icon={<CalendarIcon className="h-4 w-4" />}>
+                  <Input
+                    id="purchaseDate"
+                    type="date"
+                    className="pl-9"
+                    value={purchaseDate}
+                    onChange={(e) => setPurchaseDate(e.target.value)}
+                  />
+                </IconInput>
               </Field>
               {canSeeCost && (
                 <Field>
-                  <Label htmlFor="purchaseCost">Purchase cost</Label>
-                  <Input
-                    id="purchaseCost"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    required={requiredFields.includes('purchaseCost')}
-                    value={purchaseCost}
-                    onChange={(e) => setPurchaseCost(e.target.value)}
-                  />
+                  <Label htmlFor="purchaseCost">
+                    Purchase cost {requiredFields.includes('purchaseCost') && <Required />}
+                  </Label>
+                  <IconInput icon={<BanknoteIcon className="h-4 w-4" />}>
+                    <Input
+                      id="purchaseCost"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Enter amount"
+                      className="pl-9"
+                      required={requiredFields.includes('purchaseCost')}
+                      value={purchaseCost}
+                      onChange={(e) => setPurchaseCost(e.target.value)}
+                    />
+                  </IconInput>
                 </Field>
               )}
             </div>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardBody>
+            <SectionHeader number={2} title="Supplier & Warranty" />
 
             <Field>
               <div className="mb-1 flex items-center justify-between">
@@ -252,131 +371,185 @@ export default function NewAssetPage() {
                   </button>
                 )}
               </div>
-              <Select id="supplier" value={supplier} onChange={(e) => setSupplier(e.target.value)}>
-                <option value="">Select supplier</option>
-                {(suppliers ?? [])
-                  .filter((s) => s.isActive)
-                  .map((s) => (
-                    <option key={s.id} value={s.name}>
-                      {s.name}
-                    </option>
-                  ))}
-              </Select>
+              <IconInput icon={<UserIcon className="h-4 w-4" />}>
+                <Select id="supplier" className="pl-9" value={supplier} onChange={(e) => setSupplier(e.target.value)}>
+                  <option value="">Select supplier</option>
+                  {(suppliers ?? [])
+                    .filter((s) => s.isActive)
+                    .map((s) => (
+                      <option key={s.id} value={s.name}>
+                        {s.name}
+                      </option>
+                    ))}
+                </Select>
+              </IconInput>
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <Label htmlFor="warrantyStartDate">Warranty start</Label>
-                <Input
-                  id="warrantyStartDate"
-                  type="date"
-                  required={requiredFields.includes('warrantyStartDate')}
-                  value={warrantyStartDate}
-                  onChange={(e) => setWarrantyStartDate(e.target.value)}
-                />
+                <Label htmlFor="warrantyStartDate">
+                  Warranty start {requiredFields.includes('warrantyStartDate') && <Required />}
+                </Label>
+                <IconInput icon={<CalendarIcon className="h-4 w-4" />}>
+                  <Input
+                    id="warrantyStartDate"
+                    type="date"
+                    className="pl-9"
+                    required={requiredFields.includes('warrantyStartDate')}
+                    value={warrantyStartDate}
+                    onChange={(e) => setWarrantyStartDate(e.target.value)}
+                  />
+                </IconInput>
               </Field>
               <Field>
-                <Label htmlFor="warrantyEndDate">Warranty end</Label>
-                <Input
-                  id="warrantyEndDate"
-                  type="date"
-                  required={requiredFields.includes('warrantyEndDate')}
-                  value={warrantyEndDate}
-                  onChange={(e) => setWarrantyEndDate(e.target.value)}
-                />
+                <Label htmlFor="warrantyEndDate">
+                  Warranty end {requiredFields.includes('warrantyEndDate') && <Required />}
+                </Label>
+                <IconInput icon={<CalendarIcon className="h-4 w-4" />}>
+                  <Input
+                    id="warrantyEndDate"
+                    type="date"
+                    className="pl-9"
+                    required={requiredFields.includes('warrantyEndDate')}
+                    value={warrantyEndDate}
+                    onChange={(e) => setWarrantyEndDate(e.target.value)}
+                  />
+                </IconInput>
               </Field>
             </div>
 
             <Field>
-              <Label htmlFor="warrantyProvider">Warranty provider</Label>
-              <Input
-                id="warrantyProvider"
-                required={requiredFields.includes('warrantyProvider')}
-                value={warrantyProvider}
-                onChange={(e) => setWarrantyProvider(e.target.value)}
-              />
+              <Label htmlFor="warrantyProvider">
+                Warranty provider {requiredFields.includes('warrantyProvider') && <Required />}
+              </Label>
+              <IconInput icon={<ShieldIcon className="h-4 w-4" />}>
+                <Input
+                  id="warrantyProvider"
+                  placeholder="Enter warranty provider"
+                  className="pl-9"
+                  required={requiredFields.includes('warrantyProvider')}
+                  value={warrantyProvider}
+                  onChange={(e) => setWarrantyProvider(e.target.value)}
+                />
+              </IconInput>
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <Label htmlFor="usefulLifeMonths">Useful life (months)</Label>
-                <Input
-                  id="usefulLifeMonths"
-                  type="number"
-                  min="0"
-                  required={requiredFields.includes('usefulLifeMonths')}
-                  value={usefulLifeMonths}
-                  onChange={(e) => setUsefulLifeMonths(e.target.value)}
-                />
+                <Label htmlFor="usefulLifeMonths">
+                  Useful life (months) {requiredFields.includes('usefulLifeMonths') && <Required />}
+                </Label>
+                <IconInput icon={<ClockIcon className="h-4 w-4" />}>
+                  <Input
+                    id="usefulLifeMonths"
+                    type="number"
+                    min="0"
+                    placeholder="Enter useful life in months"
+                    className="pl-9"
+                    required={requiredFields.includes('usefulLifeMonths')}
+                    value={usefulLifeMonths}
+                    onChange={(e) => setUsefulLifeMonths(e.target.value)}
+                  />
+                </IconInput>
               </Field>
               <Field>
-                <Label htmlFor="salvageValue">Salvage value</Label>
-                <Input
-                  id="salvageValue"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  required={requiredFields.includes('salvageValue')}
-                  value={salvageValue}
-                  onChange={(e) => setSalvageValue(e.target.value)}
-                />
+                <Label htmlFor="salvageValue">
+                  Salvage value {requiredFields.includes('salvageValue') && <Required />}
+                </Label>
+                <IconInput icon={<BanknoteIcon className="h-4 w-4" />}>
+                  <Input
+                    id="salvageValue"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter salvage value"
+                    className="pl-9"
+                    required={requiredFields.includes('salvageValue')}
+                    value={salvageValue}
+                    onChange={(e) => setSalvageValue(e.target.value)}
+                  />
+                </IconInput>
               </Field>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <Label htmlFor="depreciationMethod">Depreciation method</Label>
-                <Select
-                  id="depreciationMethod"
-                  required={requiredFields.includes('depreciationMethod')}
-                  value={depreciationMethod}
-                  onChange={(e) => setDepreciationMethod(e.target.value as '' | DepreciationMethod)}
-                >
-                  <option value="">Use system default</option>
-                  <option value="STRAIGHT_LINE">Straight-line</option>
-                  <option value="REDUCING_BALANCE">Reducing balance</option>
-                </Select>
+                <Label htmlFor="depreciationMethod">
+                  Depreciation method {requiredFields.includes('depreciationMethod') && <Required />}
+                </Label>
+                <IconInput icon={<LayersIcon className="h-4 w-4" />}>
+                  <Select
+                    id="depreciationMethod"
+                    className="pl-9"
+                    required={requiredFields.includes('depreciationMethod')}
+                    value={depreciationMethod}
+                    onChange={(e) => setDepreciationMethod(e.target.value as '' | DepreciationMethod)}
+                  >
+                    <option value="">Use system default</option>
+                    <option value="STRAIGHT_LINE">Straight-line</option>
+                    <option value="REDUCING_BALANCE">Reducing balance</option>
+                  </Select>
+                </IconInput>
               </Field>
               {depreciationMethod === 'REDUCING_BALANCE' && (
                 <Field>
                   <Label htmlFor="depreciationRate">Annual rate (%)</Label>
-                  <Input
-                    id="depreciationRate"
-                    type="number"
-                    min="0"
-                    max="99.99"
-                    step="0.01"
-                    value={depreciationRate}
-                    onChange={(e) => setDepreciationRate(e.target.value)}
-                  />
+                  <IconInput icon={<LayersIcon className="h-4 w-4" />}>
+                    <Input
+                      id="depreciationRate"
+                      type="number"
+                      min="0"
+                      max="99.99"
+                      step="0.01"
+                      className="pl-9"
+                      value={depreciationRate}
+                      onChange={(e) => setDepreciationRate(e.target.value)}
+                    />
+                  </IconInput>
                 </Field>
               )}
             </div>
 
             <Field>
               <Label htmlFor="condition">Condition</Label>
-              <Select id="condition" value={condition} onChange={(e) => setCondition(e.target.value as AssetCondition)}>
-                {CONDITIONS.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </Select>
+              <IconInput icon={<HeartIcon className="h-4 w-4" />}>
+                <Select id="condition" className="pl-9" value={condition} onChange={(e) => setCondition(e.target.value as AssetCondition)}>
+                  {CONDITIONS.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </Select>
+              </IconInput>
             </Field>
 
             <Field>
               <Label htmlFor="notes">Notes</Label>
-              <Textarea id="notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+              <IconInput icon={<FileTextIcon className="h-4 w-4" />} align="top">
+                <Textarea
+                  id="notes"
+                  rows={3}
+                  placeholder="Enter additional notes…"
+                  className="pl-9"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </IconInput>
             </Field>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="secondary" onClick={() => router.push('/assets')}>
+                <XIcon className="h-4 w-4" />
+                Cancel
+              </Button>
               <Button type="submit" disabled={submitting}>
+                <SaveIcon className="h-4 w-4" />
                 {submitting ? 'Saving…' : 'Create Asset'}
               </Button>
             </div>
-          </form>
-        </CardBody>
-      </Card>
+          </CardBody>
+        </Card>
+      </form>
 
       <QuickCreateCategoryModal
         kind="asset"
@@ -403,6 +576,38 @@ export default function NewAssetPage() {
           setSupplier(newSupplier.name);
         }}
       />
+    </div>
+  );
+}
+
+function SectionHeader({ number, title }: { number: number; title: string }) {
+  return (
+    <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold text-sm font-bold text-white">
+        {number}
+      </span>
+      <h2 className="text-base font-bold text-navy">{title}</h2>
+    </div>
+  );
+}
+
+function Required() {
+  return <span className="text-red-500">*</span>;
+}
+
+function IconInput({ icon, align = 'center', children }: { icon: ReactNode; align?: 'center' | 'top'; children: ReactNode }) {
+  return (
+    <div className="relative">
+      <span
+        className={
+          align === 'top'
+            ? 'pointer-events-none absolute left-3 top-3 text-slate-400'
+            : 'pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400'
+        }
+      >
+        {icon}
+      </span>
+      {children}
     </div>
   );
 }
