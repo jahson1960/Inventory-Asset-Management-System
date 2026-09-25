@@ -14,9 +14,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && !user) router.replace('/login');
+    else if (!loading && user?.mustChangePassword) router.replace('/change-password');
   }, [loading, user, router]);
 
-  if (loading || !user) return <PageLoading />;
+  if (loading || !user || user.mustChangePassword) return <PageLoading />;
 
   return (
     <ConfirmProvider>

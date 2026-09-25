@@ -12,7 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { Field, Input, Label, Select } from '@/components/ui/input';
-import { PasswordInput } from '@/components/ui/password-input';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
@@ -35,6 +34,7 @@ export default function UsersPage() {
   const departments = departmentsPage?.items;
   const [modalOpen, setModalOpen] = useState(false);
   const [signatureUser, setSignatureUser] = useState<UserRow | null>(null);
+  const [revealedPassword, setRevealedPassword] = useState<{ email: string; password: string } | null>(null);
 
   const branchNameById = new Map((branches ?? []).map((b) => [b.id, b.name]));
   const confirmAction = useConfirm();
@@ -133,11 +133,16 @@ export default function UsersPage() {
         branches={branches ?? []}
         departments={departments ?? []}
         onClose={() => setModalOpen(false)}
-        onSaved={() => {
+        onSaved={(result) => {
           setModalOpen(false);
+          if (!result.emailSent && result.temporaryPassword) {
+            setRevealedPassword({ email: result.email, password: result.temporaryPassword });
+          }
           refetch();
         }}
       />
+
+      <RevealedPasswordModal info={revealedPassword} onClose={() => setRevealedPassword(null)} />
 
       <SignatureModal
         user={signatureUser}
@@ -225,6 +230,38 @@ function SignatureModal({
   );
 }
 
+interface CreateUserResult {
+  email: string;
+  emailSent: boolean;
+  temporaryPassword?: string;
+}
+
+function RevealedPasswordModal({
+  info,
+  onClose,
+}: {
+  info: { email: string; password: string } | null;
+  onClose: () => void;
+}) {
+  return (
+    <Modal open={Boolean(info)} onClose={onClose} title="Couldn't email the temporary password">
+      <p className="mb-3 text-sm text-slate-600">
+        The account for <span className="font-medium text-slate-900">{info?.email}</span> was created, but the
+        notification email could not be sent (check SMTP settings). Share this temporary password with them
+        directly — it will not be shown again.
+      </p>
+      <p className="mb-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-sm text-slate-900">
+        {info?.password}
+      </p>
+      <div className="flex justify-end">
+        <Button type="button" onClick={onClose}>
+          Done
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 function UserFormModal({
   open,
   branches,
@@ -236,10 +273,9 @@ function UserFormModal({
   branches: Branch[];
   departments: Department[];
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (result: CreateUserResult) => void;
 }) {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState<Role>('STAFF');
@@ -253,21 +289,23 @@ function UserFormModal({
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    const ok = await confirm({ title: 'Create this user?', message: 'They will be able to sign in with the temporary password.' });
+    const ok = await confirm({
+      title: 'Create this user?',
+      message: 'A random temporary password will be emailed to them; they must change it on first login.',
+    });
     if (!ok) return;
     setSubmitting(true);
     setError(null);
     try {
-      await api.post('/users', {
+      const result = await api.post<CreateUserResult>('/users', {
         email,
-        password,
         firstName,
         lastName,
         role,
         branchId: branchId || undefined,
         departmentId: departmentId || undefined,
       });
-      onSaved();
+      onSaved(result);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to create user');
     } finally {
@@ -292,16 +330,6 @@ function UserFormModal({
         <Field>
           <Label htmlFor="email" required>Email</Label>
           <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        </Field>
-        <Field>
-          <Label htmlFor="password" required>Temporary password</Label>
-          <PasswordInput
-            id="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
         </Field>
         <Field>
           <Label htmlFor="role" required>Role</Label>

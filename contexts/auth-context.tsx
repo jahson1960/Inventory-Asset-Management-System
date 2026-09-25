@@ -14,6 +14,7 @@ interface AuthContextValue {
   permissionsLoaded: boolean;
   theme: ThemeSettingsRecord;
   login: (email: string, password: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   logout: () => void;
   refreshPermissions: () => Promise<void>;
   refreshTheme: () => Promise<void>;
@@ -90,6 +91,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       setToken(result.accessToken);
       setUser(result.user);
+      if (result.user.mustChangePassword) {
+        router.push('/change-password');
+        return;
+      }
+      await refreshPermissions();
+      router.push('/dashboard');
+    },
+    [router, refreshPermissions],
+  );
+
+  const changePassword = useCallback(
+    async (currentPassword: string, newPassword: string) => {
+      await api.patch('/auth/change-password', { currentPassword, newPassword });
+      setUser((prev) => (prev ? { ...prev, mustChangePassword: false } : prev));
       await refreshPermissions();
       router.push('/dashboard');
     },
@@ -106,7 +121,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, permissions, permissionsLoaded, theme, login, logout, refreshPermissions, refreshTheme }}
+      value={{
+        user,
+        loading,
+        permissions,
+        permissionsLoaded,
+        theme,
+        login,
+        changePassword,
+        logout,
+        refreshPermissions,
+        refreshTheme,
+      }}
     >
       {children}
     </AuthContext.Provider>

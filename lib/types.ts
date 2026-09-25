@@ -272,6 +272,7 @@ export interface CurrentUser {
   role: Role;
   branchId: string | null;
   departmentId: string | null;
+  mustChangePassword: boolean;
 }
 
 export interface Branch {
