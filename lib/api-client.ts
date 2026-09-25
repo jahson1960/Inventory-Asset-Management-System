@@ -40,10 +40,12 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 
-  if (response.status === 401) {
+  if (response.status === 401 && token) {
     clearToken();
-    // Hard navigation is intentional here (not a Link/router transition): a 401 means the
-    // session is dead, so we want a full reload that discards all in-memory component state.
+    // Hard navigation is intentional here (not a Link/router transition): a 401 on an
+    // authenticated request means the session is dead, so we want a full reload that discards
+    // all in-memory component state. When there's no token (e.g. a login attempt itself), a 401
+    // just means invalid credentials — fall through so the caller gets the real server message.
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     if (typeof window !== 'undefined') window.location.href = '/login';
     throw new ApiError(401, 'Session expired');
