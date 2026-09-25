@@ -14,7 +14,7 @@ import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
-const ALWAYS_AVAILABLE_PLACEHOLDERS = ['firstName', 'lastName', 'companyName', 'loginUrl'];
+const ALWAYS_AVAILABLE_PLACEHOLDERS = ['staffName', 'firstName', 'lastName', 'companyName', 'loginUrl'];
 
 function groupByCategory(templates: EmailTemplateRecord[]): Array<[string, EmailTemplateRecord[]]> {
   const groups = new Map<string, EmailTemplateRecord[]>();
@@ -35,7 +35,7 @@ export default function EmailTemplatesPage() {
     <div className="max-w-3xl">
       <PageHeader
         title="Email Templates"
-        description="Standard emails sent automatically for account, request, approval, transfer and return events. Edit the wording or subject — placeholders like {{firstName}} are filled in automatically."
+        description="Standard emails sent automatically for account, request, approval, transfer and return events. Edit the wording or subject — placeholders like {{staffName}} are filled in automatically."
       />
 
       {error ? (
