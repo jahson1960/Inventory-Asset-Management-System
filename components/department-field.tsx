@@ -32,7 +32,7 @@ export function DepartmentField({
 
   return (
     <Field>
-      <Label htmlFor="department">Department</Label>
+      <Label htmlFor="department" required>Department</Label>
       <Select id="department" required value={departmentId} onChange={(e) => onChange(e.target.value)}>
         <option value="">Select department</option>
         {departments.map((d) => (

@@ -159,7 +159,7 @@ function DepartmentFormModal({
       <form onSubmit={onSubmit}>
         {!department && (
           <Field>
-            <Label htmlFor="branch">Branch</Label>
+            <Label htmlFor="branch" required>Branch</Label>
             <Select id="branch" required value={branchId} onChange={(e) => setBranchId(e.target.value)}>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -170,11 +170,11 @@ function DepartmentFormModal({
           </Field>
         )}
         <Field>
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name" required>Name</Label>
           <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <Field>
-          <Label htmlFor="code">Code</Label>
+          <Label htmlFor="code" required>Code</Label>
           <Input id="code" required value={code} onChange={(e) => setCode(e.target.value)} />
         </Field>
         <div className="flex justify-end gap-2">

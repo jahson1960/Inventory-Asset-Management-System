@@ -177,21 +177,21 @@ function StaffFormModal({
       {error && <ErrorAlert message={error} />}
       <form onSubmit={onSubmit}>
         <Field>
-          <Label htmlFor="staffNumber">Staff number</Label>
+          <Label htmlFor="staffNumber" required>Staff number</Label>
           <Input id="staffNumber" required value={staffNumber} onChange={(e) => setStaffNumber(e.target.value)} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field>
-            <Label htmlFor="firstName">First name</Label>
+            <Label htmlFor="firstName" required>First name</Label>
             <Input id="firstName" required value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </Field>
           <Field>
-            <Label htmlFor="lastName">Last name</Label>
+            <Label htmlFor="lastName" required>Last name</Label>
             <Input id="lastName" required value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </Field>
         </div>
         <Field>
-          <Label htmlFor="branch">Branch</Label>
+          <Label htmlFor="branch" required>Branch</Label>
           <Select
             id="branch"
             required
@@ -210,7 +210,7 @@ function StaffFormModal({
           </Select>
         </Field>
         <Field>
-          <Label htmlFor="department">Department</Label>
+          <Label htmlFor="department" required>Department</Label>
           <Select id="department" required value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
             <option value="">Select department</option>
             {deptOptions.map((d) => (

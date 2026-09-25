@@ -45,7 +45,7 @@ export default function LoginPage() {
 
         <form onSubmit={onSubmit}>
           <Field>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" required>Email</Label>
             <Input
               id="email"
               type="email"
@@ -56,7 +56,7 @@ export default function LoginPage() {
             />
           </Field>
           <Field>
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" required>Password</Label>
             <PasswordInput
               id="password"
               autoComplete="current-password"

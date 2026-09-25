@@ -281,20 +281,20 @@ function UserFormModal({
       <form onSubmit={onSubmit}>
         <div className="grid grid-cols-2 gap-3">
           <Field>
-            <Label htmlFor="firstName">First name</Label>
+            <Label htmlFor="firstName" required>First name</Label>
             <Input id="firstName" required value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </Field>
           <Field>
-            <Label htmlFor="lastName">Last name</Label>
+            <Label htmlFor="lastName" required>Last name</Label>
             <Input id="lastName" required value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </Field>
         </div>
         <Field>
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" required>Email</Label>
           <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </Field>
         <Field>
-          <Label htmlFor="password">Temporary password</Label>
+          <Label htmlFor="password" required>Temporary password</Label>
           <PasswordInput
             id="password"
             required
@@ -304,7 +304,7 @@ function UserFormModal({
           />
         </Field>
         <Field>
-          <Label htmlFor="role">Role</Label>
+          <Label htmlFor="role" required>Role</Label>
           <Select id="role" required value={role} onChange={(e) => setRole(e.target.value as Role)}>
             {ROLES.map((r) => (
               <option key={r} value={r}>

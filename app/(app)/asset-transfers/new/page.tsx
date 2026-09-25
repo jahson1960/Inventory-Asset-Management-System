@@ -73,7 +73,7 @@ function NewAssetTransferForm() {
           {error && <ErrorAlert message={error} />}
           <form onSubmit={onSubmit}>
             <Field>
-              <Label htmlFor="asset">Asset</Label>
+              <Label htmlFor="asset" required>Asset</Label>
               <Select id="asset" required value={assetId} onChange={(e) => setAssetId(e.target.value)}>
                 <option value="">Select asset</option>
                 {(assets ?? []).map((a) => (
@@ -88,7 +88,7 @@ function NewAssetTransferForm() {
             </Field>
 
             <Field>
-              <Label htmlFor="toLocation">Destination location</Label>
+              <Label htmlFor="toLocation" required>Destination location</Label>
               <Select id="toLocation" required value={toLocationId} onChange={(e) => setToLocationId(e.target.value)}>
                 <option value="">Select destination</option>
                 {(locations ?? []).map((l) => (
@@ -100,7 +100,7 @@ function NewAssetTransferForm() {
             </Field>
 
             <Field>
-              <Label htmlFor="toCustodian">New custodian (optional)</Label>
+              <Label htmlFor="toCustodian">New custodian</Label>
               <Select id="toCustodian" value={toCustodianId} onChange={(e) => setToCustodianId(e.target.value)}>
                 <option value="">Keep current custodian</option>
                 {(destinationStaff ?? []).map((s) => (
@@ -112,7 +112,7 @@ function NewAssetTransferForm() {
             </Field>
 
             <Field>
-              <Label htmlFor="reason">Reason</Label>
+              <Label htmlFor="reason" required>Reason</Label>
               <Textarea id="reason" rows={2} required value={reason} onChange={(e) => setReason(e.target.value)} />
             </Field>
 

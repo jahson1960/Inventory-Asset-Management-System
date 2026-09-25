@@ -62,12 +62,12 @@ export default function NewVerificationCampaignPage() {
           {error && <ErrorAlert message={error} />}
           <form onSubmit={onSubmit}>
             <Field>
-              <Label htmlFor="name">Campaign name</Label>
+              <Label htmlFor="name" required>Campaign name</Label>
               <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Q1 2026 Lagos Verification" />
             </Field>
 
             <Field>
-              <Label htmlFor="branch">Branch</Label>
+              <Label htmlFor="branch" required>Branch</Label>
               <Select
                 id="branch"
                 required
@@ -87,7 +87,7 @@ export default function NewVerificationCampaignPage() {
             </Field>
 
             <Field>
-              <Label htmlFor="location">Narrow to one location (optional)</Label>
+              <Label htmlFor="location">Narrow to one location</Label>
               <Select id="location" value={locationId} onChange={(e) => setLocationId(e.target.value)} disabled={!branchId}>
                 <option value="">Whole branch</option>
                 {(locations ?? []).map((l) => (
@@ -100,11 +100,11 @@ export default function NewVerificationCampaignPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <Label htmlFor="startDate">Start date</Label>
+                <Label htmlFor="startDate" required>Start date</Label>
                 <Input id="startDate" type="date" required value={startDate} onChange={(e) => setStartDate(e.target.value)} />
               </Field>
               <Field>
-                <Label htmlFor="dueDate">Due date</Label>
+                <Label htmlFor="dueDate" required>Due date</Label>
                 <Input id="dueDate" type="date" required value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
               </Field>
             </div>

@@ -60,7 +60,7 @@ function NewMaintenanceRequestForm() {
           {error && <ErrorAlert message={error} />}
           <form onSubmit={onSubmit}>
             <Field>
-              <Label htmlFor="asset">Asset</Label>
+              <Label htmlFor="asset" required>Asset</Label>
               <Select id="asset" required value={assetId} onChange={(e) => setAssetId(e.target.value)}>
                 <option value="">Select asset</option>
                 {(assets ?? []).map((a) => (
@@ -72,7 +72,7 @@ function NewMaintenanceRequestForm() {
             </Field>
 
             <Field>
-              <Label htmlFor="faultDescription">Fault description</Label>
+              <Label htmlFor="faultDescription" required>Fault description</Label>
               <Textarea
                 id="faultDescription"
                 rows={3}

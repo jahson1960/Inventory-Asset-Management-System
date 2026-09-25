@@ -143,11 +143,11 @@ function UnitFormModal({
       {error && <ErrorAlert message={error} />}
       <form onSubmit={onSubmit}>
         <Field>
-          <Label htmlFor="code">Code</Label>
+          <Label htmlFor="code" required>Code</Label>
           <Input id="code" required value={code} onChange={(e) => setCode(e.target.value)} />
         </Field>
         <Field>
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name" required>Name</Label>
           <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <div className="flex justify-end gap-2">

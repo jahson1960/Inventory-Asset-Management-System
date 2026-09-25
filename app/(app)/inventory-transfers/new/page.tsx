@@ -64,7 +64,7 @@ export default function NewInventoryTransferPage() {
           {error && <ErrorAlert message={error} />}
           <form onSubmit={onSubmit}>
             <Field>
-              <Label htmlFor="item">Item</Label>
+              <Label htmlFor="item" required>Item</Label>
               <Select id="item" required value={itemId} onChange={(e) => setItemId(e.target.value)}>
                 <option value="">Select item</option>
                 {(items ?? []).map((i) => (
@@ -77,7 +77,7 @@ export default function NewInventoryTransferPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <Label htmlFor="from">From</Label>
+                <Label htmlFor="from" required>From</Label>
                 <Select id="from" required value={fromLocationId} onChange={(e) => setFromLocationId(e.target.value)}>
                   <option value="">Select location</option>
                   {(locations ?? []).map((l) => (
@@ -88,7 +88,7 @@ export default function NewInventoryTransferPage() {
                 </Select>
               </Field>
               <Field>
-                <Label htmlFor="to">To</Label>
+                <Label htmlFor="to" required>To</Label>
                 <Select id="to" required value={toLocationId} onChange={(e) => setToLocationId(e.target.value)}>
                   <option value="">Select location</option>
                   {(locations ?? []).map((l) => (
@@ -102,7 +102,7 @@ export default function NewInventoryTransferPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <Label htmlFor="quantity">Quantity</Label>
+                <Label htmlFor="quantity" required>Quantity</Label>
                 <Input
                   id="quantity"
                   type="number"
@@ -114,7 +114,7 @@ export default function NewInventoryTransferPage() {
                 />
               </Field>
               <Field>
-                <Label htmlFor="unit">Unit</Label>
+                <Label htmlFor="unit" required>Unit</Label>
                 <Select id="unit" required value={unitId} onChange={(e) => setUnitId(e.target.value)} disabled={!itemId}>
                   <option value="">Select unit</option>
                   {unitOptions.map((u) => (

@@ -138,7 +138,7 @@ export default function NewInventoryItemPage() {
                 </IconInput>
               </Field>
               <Field>
-                <Label htmlFor="barcode">Barcode (optional)</Label>
+                <Label htmlFor="barcode">Barcode</Label>
                 <IconInput icon={<BarcodeIcon className="h-4 w-4" />}>
                   <Input
                     id="barcode"
@@ -229,7 +229,7 @@ export default function NewInventoryItemPage() {
                 <IconInput icon={<BuildingIcon className="h-4 w-4" />}>
                   <Input
                     id="brand"
-                    placeholder="Enter brand (optional)"
+                    placeholder="Enter brand"
                     className="pl-9"
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
@@ -250,7 +250,7 @@ export default function NewInventoryItemPage() {
 
             <Field>
               <div className="mb-1 flex items-center justify-between">
-                <Label htmlFor="primaryStore">Primary store (optional)</Label>
+                <Label htmlFor="primaryStore">Primary store</Label>
                 {canQuickCreateLocation && (
                   <button
                     type="button"
@@ -342,7 +342,7 @@ export default function NewInventoryItemPage() {
 
         <Card>
           <CardBody>
-            <SectionHeader number={3} title="Additional Information" description="(Optional) Add any extra notes or details about the item." />
+            <SectionHeader number={3} title="Additional Information" description="Add any extra notes or details about the item." />
 
             <Field>
               <Label htmlFor="notes">Notes</Label>

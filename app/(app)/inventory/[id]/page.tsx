@@ -246,7 +246,7 @@ function UnitConversionModal({
       {error && <ErrorAlert message={error} />}
       <form onSubmit={onSubmit}>
         <Field>
-          <Label htmlFor="unit">Unit</Label>
+          <Label htmlFor="unit" required>Unit</Label>
           <Select id="unit" required value={unitId} onChange={(e) => setUnitId(e.target.value)}>
             <option value="">Select unit</option>
             {units.map((u) => (
@@ -257,7 +257,7 @@ function UnitConversionModal({
           </Select>
         </Field>
         <Field>
-          <Label htmlFor="factor">Conversion factor (base units per 1 of this unit)</Label>
+          <Label htmlFor="factor" required>Conversion factor (base units per 1 of this unit)</Label>
           <Input
             id="factor"
             type="number"

@@ -188,7 +188,7 @@ function AdjustStockModal({ open, onClose, onSaved }: { open: boolean; onClose: 
       {error && <ErrorAlert message={error} />}
       <form onSubmit={onSubmit}>
         <Field>
-          <Label htmlFor="item">Item</Label>
+          <Label htmlFor="item" required>Item</Label>
           <Select id="item" required value={itemId} onChange={(e) => setItemId(e.target.value)}>
             <option value="">Select item</option>
             {(items ?? []).map((i) => (
@@ -199,7 +199,7 @@ function AdjustStockModal({ open, onClose, onSaved }: { open: boolean; onClose: 
           </Select>
         </Field>
         <Field>
-          <Label htmlFor="location">Location</Label>
+          <Label htmlFor="location" required>Location</Label>
           <Select id="location" required value={locationId} onChange={(e) => setLocationId(e.target.value)}>
             <option value="">Select location</option>
             {(locations ?? []).map((l) => (
@@ -223,7 +223,7 @@ function AdjustStockModal({ open, onClose, onSaved }: { open: boolean; onClose: 
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field>
-            <Label htmlFor="quantity">Quantity</Label>
+            <Label htmlFor="quantity" required>Quantity</Label>
             <Input
               id="quantity"
               type="number"
@@ -235,7 +235,7 @@ function AdjustStockModal({ open, onClose, onSaved }: { open: boolean; onClose: 
             />
           </Field>
           <Field>
-            <Label htmlFor="unit">Unit</Label>
+            <Label htmlFor="unit" required>Unit</Label>
             <Select id="unit" required value={unitId} onChange={(e) => setUnitId(e.target.value)}>
               <option value="">Select unit</option>
               {unitOptions.map((u) => (

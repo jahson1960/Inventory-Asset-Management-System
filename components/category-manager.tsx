@@ -181,7 +181,7 @@ function CategoryFormModal({
       <form onSubmit={onSubmit}>
         {!category && (
           <Field>
-            <Label htmlFor="parent">Parent category (optional)</Label>
+            <Label htmlFor="parent">Parent category</Label>
             <Select id="parent" value={parentId} onChange={(e) => setParentId(e.target.value)}>
               <option value="">None (top level)</option>
               {parentOptions.map((c) => (
@@ -193,11 +193,11 @@ function CategoryFormModal({
           </Field>
         )}
         <Field>
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name" required>Name</Label>
           <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <Field>
-          <Label htmlFor="code">Code</Label>
+          <Label htmlFor="code" required>Code</Label>
           <Input id="code" required value={code} onChange={(e) => setCode(e.target.value)} />
         </Field>
         <Field>

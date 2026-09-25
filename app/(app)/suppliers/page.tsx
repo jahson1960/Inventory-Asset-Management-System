@@ -166,7 +166,7 @@ function SupplierFormModal({
       {error && <ErrorAlert message={error} />}
       <form onSubmit={onSubmit}>
         <Field>
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name" required>Name</Label>
           <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <Field>

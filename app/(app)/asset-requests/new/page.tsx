@@ -70,12 +70,12 @@ export default function NewAssetRequestPage() {
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2">
                 <Field>
-                  <Label htmlFor="name">What do you need?</Label>
+                  <Label htmlFor="name" required>What do you need?</Label>
                   <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. HP LaserJet printer" />
                 </Field>
               </div>
               <Field>
-                <Label htmlFor="quantity">Quantity</Label>
+                <Label htmlFor="quantity" required>Quantity</Label>
                 <Input
                   id="quantity"
                   type="number"
@@ -91,7 +91,7 @@ export default function NewAssetRequestPage() {
             <DepartmentField departmentId={departmentId} onChange={setDepartmentId} departments={departments ?? []} />
 
             <Field>
-              <Label htmlFor="category">Category (optional)</Label>
+              <Label htmlFor="category">Category</Label>
               <Select id="category" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
                 <option value="">Not sure</option>
                 {(categories ?? []).map((c) => (

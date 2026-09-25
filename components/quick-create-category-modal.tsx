@@ -51,11 +51,11 @@ export function QuickCreateCategoryModal({
       {error && <ErrorAlert message={error} />}
       <form onSubmit={onSubmit}>
         <Field>
-          <Label htmlFor="quickCategoryName">Name</Label>
+          <Label htmlFor="quickCategoryName" required>Name</Label>
           <Input id="quickCategoryName" required value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <Field>
-          <Label htmlFor="quickCategoryCode">Code</Label>
+          <Label htmlFor="quickCategoryCode" required>Code</Label>
           <Input id="quickCategoryCode" required value={code} onChange={(e) => setCode(e.target.value)} />
         </Field>
         <div className="flex justify-end gap-2">

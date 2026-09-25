@@ -11,7 +11,7 @@ import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/tab
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
-import { Field, Input, Label, Select } from '@/components/ui/input';
+import { Field, Label, Select, Textarea } from '@/components/ui/input';
 import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
 import { RequirePermission } from '@/components/require-permission';
@@ -370,7 +370,7 @@ function AssignModal({
       {error && <ErrorAlert message={error} />}
       <form onSubmit={onSubmit}>
         <Field>
-          <Label htmlFor="staff">Staff member</Label>
+          <Label htmlFor="staff" required>Staff member</Label>
           <Select id="staff" required value={staffId} onChange={(e) => setStaffId(e.target.value)}>
             <option value="">Select staff</option>
             {(staff ?? []).map((s) => (
@@ -382,7 +382,7 @@ function AssignModal({
         </Field>
         <Field>
           <Label htmlFor="notes">Notes</Label>
-          <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <Textarea id="notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </Field>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>

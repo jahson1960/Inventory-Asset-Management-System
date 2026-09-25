@@ -69,7 +69,7 @@ export default function NewInventoryRequestPage() {
           {error && <ErrorAlert message={error} />}
           <form onSubmit={onSubmit}>
             <Field>
-              <Label htmlFor="item">Item</Label>
+              <Label htmlFor="item" required>Item</Label>
               <Select id="item" required value={itemId} onChange={(e) => setItemId(e.target.value)}>
                 <option value="">Select item</option>
                 {(items ?? []).map((i) => (
@@ -81,7 +81,7 @@ export default function NewInventoryRequestPage() {
             </Field>
 
             <Field>
-              <Label htmlFor="location">Issuing store</Label>
+              <Label htmlFor="location" required>Issuing store</Label>
               <Select id="location" required value={locationId} onChange={(e) => setLocationId(e.target.value)}>
                 <option value="">Select location</option>
                 {(locations ?? []).map((l) => (
@@ -96,7 +96,7 @@ export default function NewInventoryRequestPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <Label htmlFor="quantity">Quantity</Label>
+                <Label htmlFor="quantity" required>Quantity</Label>
                 <Input
                   id="quantity"
                   type="number"
@@ -108,7 +108,7 @@ export default function NewInventoryRequestPage() {
                 />
               </Field>
               <Field>
-                <Label htmlFor="unit">Unit</Label>
+                <Label htmlFor="unit" required>Unit</Label>
                 <Select id="unit" required value={unitId} onChange={(e) => setUnitId(e.target.value)} disabled={!itemId}>
                   <option value="">Select unit</option>
                   {unitOptions.map((u) => (

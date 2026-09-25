@@ -48,11 +48,11 @@ export default function NewStockCountSessionPage() {
           {error && <ErrorAlert message={error} />}
           <form onSubmit={onSubmit}>
             <Field>
-              <Label htmlFor="name">Session name</Label>
+              <Label htmlFor="name" required>Session name</Label>
               <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. September Stock Count" />
             </Field>
             <Field>
-              <Label htmlFor="location">Store location</Label>
+              <Label htmlFor="location" required>Store location</Label>
               <Select id="location" required value={locationId} onChange={(e) => setLocationId(e.target.value)}>
                 <option value="">Select location</option>
                 {(locations ?? []).map((l) => (

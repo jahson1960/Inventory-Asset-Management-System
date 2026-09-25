@@ -152,7 +152,7 @@ function FulfillPanel({ requestId, onFulfilled }: { requestId: string; onFulfill
         {error && <ErrorAlert message={error} />}
         <form onSubmit={onSubmit} className="flex items-end gap-2">
           <Field>
-            <Label htmlFor="asset">Link to an existing (unassigned) asset</Label>
+            <Label htmlFor="asset" required>Link to an existing (unassigned) asset</Label>
             <Select id="asset" required value={assetId} onChange={(e) => setAssetId(e.target.value)}>
               <option value="">Select asset</option>
               {(assets ?? []).map((a) => (

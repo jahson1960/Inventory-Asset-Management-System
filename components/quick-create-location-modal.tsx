@@ -55,7 +55,7 @@ export function QuickCreateLocationModal({
       {error && <ErrorAlert message={error} />}
       <form onSubmit={onSubmit}>
         <Field>
-          <Label htmlFor="quickLocationBranch">Branch</Label>
+          <Label htmlFor="quickLocationBranch" required>Branch</Label>
           <Select id="quickLocationBranch" required value={branchId} onChange={(e) => setBranchId(e.target.value)}>
             <option value="">Select branch</option>
             {(branches ?? []).map((b) => (
@@ -66,7 +66,7 @@ export function QuickCreateLocationModal({
           </Select>
         </Field>
         <Field>
-          <Label htmlFor="quickLocationType">Type</Label>
+          <Label htmlFor="quickLocationType" required>Type</Label>
           <Select id="quickLocationType" required value={type} onChange={(e) => setType(e.target.value as LocationType)}>
             {LOCATION_TYPES.map((t) => (
               <option key={t} value={t}>
@@ -76,7 +76,7 @@ export function QuickCreateLocationModal({
           </Select>
         </Field>
         <Field>
-          <Label htmlFor="quickLocationName">Name</Label>
+          <Label htmlFor="quickLocationName" required>Name</Label>
           <Input id="quickLocationName" required value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <p className="mb-3 text-xs text-slate-500">Created as a top-level location; edit it later from Locations to set a parent.</p>

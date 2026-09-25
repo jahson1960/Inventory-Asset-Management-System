@@ -203,7 +203,7 @@ function ScanForm({
           </div>
 
           <Field>
-            <Label htmlFor="discrepancyType">Report a specific issue (optional)</Label>
+            <Label htmlFor="discrepancyType">Report a specific issue</Label>
             <Select id="discrepancyType" value={discrepancyType} onChange={(e) => setDiscrepancyType(e.target.value as DiscrepancyType)}>
               <option value="">None — use location/custodian comparison</option>
               {DISCREPANCY_OVERRIDES.map((d) => (

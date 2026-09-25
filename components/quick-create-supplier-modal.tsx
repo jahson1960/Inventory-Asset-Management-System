@@ -46,7 +46,7 @@ export function QuickCreateSupplierModal({
       {error && <ErrorAlert message={error} />}
       <form onSubmit={onSubmit}>
         <Field>
-          <Label htmlFor="quickSupplierName">Name</Label>
+          <Label htmlFor="quickSupplierName" required>Name</Label>
           <Input id="quickSupplierName" required value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <p className="mb-3 text-xs text-slate-500">Contact details can be added later from Suppliers.</p>

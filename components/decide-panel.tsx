@@ -38,7 +38,7 @@ export function DecidePanel({ decidePath, onDecided }: { decidePath: string; onD
       <p className="mb-2 text-sm font-semibold text-amber-900">Your decision is required at this step</p>
       {error && <ErrorAlert message={error} />}
       <Textarea
-        placeholder="Comments (optional)"
+        placeholder="Comments"
         rows={2}
         value={comments}
         onChange={(e) => setComments(e.target.value)}

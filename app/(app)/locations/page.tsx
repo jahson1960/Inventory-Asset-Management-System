@@ -176,7 +176,7 @@ function LocationFormModal({
       <form onSubmit={onSubmit}>
         {!location && (
           <Field>
-            <Label htmlFor="branch">Branch</Label>
+            <Label htmlFor="branch" required>Branch</Label>
             <Select
               id="branch"
               required
@@ -195,7 +195,7 @@ function LocationFormModal({
           </Field>
         )}
         <Field>
-          <Label htmlFor="parent">Parent location (optional)</Label>
+          <Label htmlFor="parent">Parent location</Label>
           <Select id="parent" value={parentId} onChange={(e) => setParentId(e.target.value)}>
             <option value="">None (top level)</option>
             {parentOptions.map((l) => (
@@ -206,7 +206,7 @@ function LocationFormModal({
           </Select>
         </Field>
         <Field>
-          <Label htmlFor="type">Type</Label>
+          <Label htmlFor="type" required>Type</Label>
           <Select id="type" required value={type} onChange={(e) => setType(e.target.value as LocationType)}>
             {LOCATION_TYPES.map((t) => (
               <option key={t} value={t}>
@@ -216,11 +216,11 @@ function LocationFormModal({
           </Select>
         </Field>
         <Field>
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name" required>Name</Label>
           <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <Field>
-          <Label htmlFor="code">Code (optional)</Label>
+          <Label htmlFor="code">Code</Label>
           <Input id="code" value={code} onChange={(e) => setCode(e.target.value)} />
         </Field>
         <div className="flex justify-end gap-2">

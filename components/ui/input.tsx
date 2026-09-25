@@ -20,10 +20,19 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
   );
 }
 
-export function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
+export function Label({
+  children,
+  htmlFor,
+  required,
+}: {
+  children: React.ReactNode;
+  htmlFor?: string;
+  required?: boolean;
+}) {
   return (
     <label htmlFor={htmlFor} className="mb-1 block text-xs font-medium text-slate-600">
       {children}
+      {required && <span className="text-red-500"> *</span>}
     </label>
   );
 }

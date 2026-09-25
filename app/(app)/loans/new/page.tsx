@@ -60,7 +60,7 @@ export default function NewLoanRequestPage() {
           {error && <ErrorAlert message={error} />}
           <form onSubmit={onSubmit}>
             <Field>
-              <Label htmlFor="asset">Equipment</Label>
+              <Label htmlFor="asset" required>Equipment</Label>
               <Select id="asset" required value={assetId} onChange={(e) => setAssetId(e.target.value)}>
                 <option value="">Select equipment</option>
                 {(assets ?? []).map((a) => (
@@ -74,7 +74,7 @@ export default function NewLoanRequestPage() {
             <DepartmentField departmentId={departmentId} onChange={setDepartmentId} departments={departments ?? []} />
 
             <Field>
-              <Label htmlFor="expectedReturnDate">Expected return date</Label>
+              <Label htmlFor="expectedReturnDate" required>Expected return date</Label>
               <Input
                 id="expectedReturnDate"
                 type="date"
@@ -85,7 +85,7 @@ export default function NewLoanRequestPage() {
             </Field>
 
             <Field>
-              <Label htmlFor="purpose">Purpose</Label>
+              <Label htmlFor="purpose" required>Purpose</Label>
               <Textarea id="purpose" rows={2} required value={purpose} onChange={(e) => setPurpose(e.target.value)} />
             </Field>
 

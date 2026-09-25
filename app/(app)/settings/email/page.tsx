@@ -87,11 +87,11 @@ function SmtpForm({ settings, onSaved }: { settings?: SmtpSettingsRecord; onSave
       {error && <ErrorAlert message={error} />}
       <div className="grid grid-cols-2 gap-3">
         <Field>
-          <Label htmlFor="host">SMTP host</Label>
+          <Label htmlFor="host" required>SMTP host</Label>
           <Input id="host" required value={host} onChange={(e) => setHost(e.target.value)} placeholder="smtp.office365.com" />
         </Field>
         <Field>
-          <Label htmlFor="port">Port</Label>
+          <Label htmlFor="port" required>Port</Label>
           <Input id="port" type="number" required value={port} onChange={(e) => setPort(e.target.value)} />
         </Field>
       </div>
@@ -113,7 +113,7 @@ function SmtpForm({ settings, onSaved }: { settings?: SmtpSettingsRecord; onSave
 
       <div className="grid grid-cols-2 gap-3">
         <Field>
-          <Label htmlFor="fromEmail">From email</Label>
+          <Label htmlFor="fromEmail" required>From email</Label>
           <Input id="fromEmail" type="email" required value={fromEmail} onChange={(e) => setFromEmail(e.target.value)} />
         </Field>
         <Field>
@@ -163,7 +163,7 @@ function TestEmailForm() {
       {success && <p className="mb-3 text-sm text-emerald-600">Test email sent successfully.</p>}
       <div className="flex items-end gap-2">
         <Field>
-          <Label htmlFor="to">Recipient</Label>
+          <Label htmlFor="to" required>Recipient</Label>
           <Input id="to" type="email" required value={to} onChange={(e) => setTo(e.target.value)} />
         </Field>
         <Button type="submit" disabled={submitting}>
