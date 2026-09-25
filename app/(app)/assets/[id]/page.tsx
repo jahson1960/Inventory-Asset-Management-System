@@ -4,7 +4,7 @@ import { use, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { api, ApiError, fetchAuthenticatedObjectUrl, fileUrl, uploadFile } from '@/lib/api-client';
-import type { Asset, AssetAssignment, AssetStatus, DisplaySettingsRecord, Staff } from '@/lib/types';
+import type { Asset, AssetAssignment, AssetStatus, DisplaySettingsRecord, Paginated, Staff } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
@@ -341,7 +341,8 @@ function AssignModal({
   onClose: () => void;
   onAssigned: () => void;
 }) {
-  const { data: staff } = useApi<Staff[]>(open ? '/staff' : null, { branchId });
+  const { data: staffPage } = useApi<Paginated<Staff>>(open ? '/staff' : null, { branchId, pageSize: 1000 });
+  const staff = staffPage?.items;
   const [staffId, setStaffId] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);

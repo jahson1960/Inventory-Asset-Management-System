@@ -17,7 +17,8 @@ export default function NewVerificationCampaignPage() {
   const { data: branchesPage } = useApi<Paginated<Branch>>('/branches', { pageSize: 1000 });
   const branches = branchesPage?.items;
   const [branchId, setBranchId] = useState('');
-  const { data: locations } = useApi<LocationNode[]>(branchId ? '/locations' : null, { branchId });
+  const { data: locationsPage } = useApi<Paginated<LocationNode>>(branchId ? '/locations' : null, { branchId, pageSize: 1000 });
+  const locations = locationsPage?.items;
 
   const [name, setName] = useState('');
   const [locationId, setLocationId] = useState('');

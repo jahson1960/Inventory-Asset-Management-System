@@ -37,9 +37,11 @@ function NewAssetTransferForm() {
   const confirm = useConfirm();
 
   const selectedAsset = (assets ?? []).find((a) => a.id === assetId);
-  const { data: destinationStaff } = useApi<Staff[]>(toLocationId ? '/staff' : null, {
+  const { data: destinationStaffPage } = useApi<Paginated<Staff>>(toLocationId ? '/staff' : null, {
     branchId: locations?.find((l) => l.id === toLocationId)?.branchId,
+    pageSize: 1000,
   });
+  const destinationStaff = destinationStaffPage?.items;
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();

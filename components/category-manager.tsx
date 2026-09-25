@@ -2,8 +2,9 @@
 
 import { useState, type FormEvent } from 'react';
 import { useApi } from '@/hooks/use-api';
+import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import { api, ApiError } from '@/lib/api-client';
-import type { AssetCategory, InventoryCategory } from '@/lib/types';
+import type { AssetCategory, DisplaySettingsRecord, InventoryCategory, Paginated } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
@@ -15,6 +16,7 @@ import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
 import { RequirePermission } from '@/components/require-permission';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { Pagination } from '@/components/ui/pagination';
 
 type Category = AssetCategory | InventoryCategory;
 
@@ -29,11 +31,18 @@ export function CategoryManager({
   description: string;
   permission: string;
 }) {
-  const { data: categories, loading, error, refetch } = useApi<Category[]>(resourcePath);
+  const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
+  const pageSize = displaySettings?.pageSize ?? 25;
+  const { items: categories, total, page, setPage, totalPages, loading, error, refetch } = usePaginatedApi<Category>(
+    resourcePath,
+    pageSize,
+  );
+  const { data: allCategoriesPage } = useApi<Paginated<Category>>(resourcePath, { pageSize: 1000 });
+  const allCategories = allCategoriesPage?.items;
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
 
-  const nameById = new Map((categories ?? []).map((c) => [c.id, c.name]));
+  const nameById = new Map((allCategories ?? []).map((c) => [c.id, c.name]));
 
   return (
     <div>
@@ -61,7 +70,7 @@ export function CategoryManager({
           <div className="p-4">
             <ErrorAlert message={error} />
           </div>
-        ) : !categories || categories.length === 0 ? (
+        ) : categories.length === 0 ? (
           <EmptyState message="No categories yet." />
         ) : (
           <Table>
@@ -102,12 +111,13 @@ export function CategoryManager({
           </Table>
         )}
       </Card>
+      <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
 
       <CategoryFormModal
         key={editing?.id ?? 'new'}
         open={modalOpen}
         category={editing}
-        categories={categories ?? []}
+        categories={allCategories ?? []}
         resourcePath={resourcePath}
         onClose={() => setModalOpen(false)}
         onSaved={() => {

@@ -3,7 +3,15 @@
 import { useState, type FormEvent } from 'react';
 import { useApi } from '@/hooks/use-api';
 import { api, ApiError } from '@/lib/api-client';
-import type { AdjustmentMovementType, InventoryItem, LocationNode, StockMovement, StockMovementType, UnitOfMeasure } from '@/lib/types';
+import type {
+  AdjustmentMovementType,
+  InventoryItem,
+  LocationNode,
+  Paginated,
+  StockMovement,
+  StockMovementType,
+  UnitOfMeasure,
+} from '@/lib/types';
 import { cn } from '@/lib/cn';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card } from '@/components/ui/card';
@@ -130,9 +138,12 @@ export default function StockMovementsPage() {
 }
 
 function AdjustStockModal({ open, onClose, onSaved }: { open: boolean; onClose: () => void; onSaved: () => void }) {
-  const { data: items } = useApi<InventoryItem[]>(open ? '/inventory-items' : null);
-  const { data: locations } = useApi<LocationNode[]>(open ? '/locations' : null, { type: 'STORE' });
-  const { data: units } = useApi<UnitOfMeasure[]>(open ? '/units-of-measure' : null);
+  const { data: itemsPage } = useApi<Paginated<InventoryItem>>(open ? '/inventory-items' : null, { pageSize: 1000 });
+  const items = itemsPage?.items;
+  const { data: locationsPage } = useApi<Paginated<LocationNode>>(open ? '/locations' : null, { type: 'STORE', pageSize: 1000 });
+  const locations = locationsPage?.items;
+  const { data: unitsPage } = useApi<Paginated<UnitOfMeasure>>(open ? '/units-of-measure' : null, { pageSize: 1000 });
+  const units = unitsPage?.items;
 
   const [itemId, setItemId] = useState('');
   const [locationId, setLocationId] = useState('');
