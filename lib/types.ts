@@ -77,7 +77,7 @@ export interface AssetRequestRecord {
   fulfilledAssetId: string | null;
   fulfilledAt: string | null;
   createdAt: string;
-  requestedBy?: Staff;
+  requestedBy?: CurrentUser;
   department?: Department;
   branch?: Branch;
   category?: AssetCategory | null;
@@ -97,7 +97,7 @@ export interface InventoryRequestRecord {
   currentStepOrder: number;
   issuanceId: string | null;
   createdAt: string;
-  requestedBy?: Staff;
+  requestedBy?: CurrentUser;
   department?: Department;
   item?: InventoryItem;
   location?: LocationNode;
@@ -114,7 +114,7 @@ export interface EquipmentLoanRequestRecord {
   status: RequestStatus;
   currentStepOrder: number;
   createdAt: string;
-  requestedBy?: Staff;
+  requestedBy?: CurrentUser;
   department?: Department;
   asset?: Asset;
 }
@@ -136,8 +136,8 @@ export interface AssetTransferRecord {
   asset?: Asset;
   fromLocation?: LocationNode;
   toLocation?: LocationNode;
-  fromCustodian?: Staff | null;
-  toCustodian?: Staff | null;
+  fromCustodian?: CurrentUser | null;
+  toCustodian?: CurrentUser | null;
   initiatedBy?: { id: string; firstName: string; lastName: string };
 }
 
@@ -274,7 +274,7 @@ export interface IssuanceRecord {
   quantityIssued: string;
   enteredUnit?: UnitOfMeasure;
   issuedAt: string;
-  requestedBy?: Staff;
+  requestedBy?: CurrentUser;
 }
 
 export interface CurrentUser {
@@ -285,7 +285,12 @@ export interface CurrentUser {
   role: Role;
   branchId: string | null;
   departmentId: string | null;
+  staffNumber: string | null;
+  phone: string | null;
+  jobTitle: string | null;
   mustChangePassword: boolean;
+  branch?: Branch;
+  department?: Department;
 }
 
 export interface Branch {
@@ -349,22 +354,6 @@ export interface Supplier {
   isActive: boolean;
 }
 
-export interface Staff {
-  id: string;
-  staffNumber: string;
-  userId: string | null;
-  branchId: string;
-  departmentId: string;
-  firstName: string;
-  lastName: string;
-  email: string | null;
-  phone: string | null;
-  jobTitle: string | null;
-  isActive: boolean;
-  branch?: Branch;
-  department?: Department;
-}
-
 export interface Asset {
   id: string;
   assetTag: string;
@@ -392,7 +381,7 @@ export interface Asset {
   salvageValue: string | null;
   category?: AssetCategory;
   currentLocation?: LocationNode;
-  currentCustodian?: Staff | null;
+  currentCustodian?: CurrentUser | null;
   branch?: Branch;
   attachments?: AssetAttachment[];
   depreciation?: DepreciationResult | null;
@@ -425,7 +414,7 @@ export interface AssetAssignment {
   conditionAtReturn: AssetCondition | null;
   returnRemarks: string | null;
   asset?: Asset;
-  staff?: Staff;
+  staff?: CurrentUser;
   assignedBy?: { id: string; firstName: string; lastName: string; email: string };
 }
 
@@ -501,7 +490,7 @@ export interface InventoryIssuance {
   issuedAt: string;
   item?: InventoryItem;
   location?: LocationNode;
-  requestedBy?: Staff;
+  requestedBy?: CurrentUser;
   department?: Department;
   enteredUnit?: UnitOfMeasure;
 }
@@ -545,7 +534,7 @@ export interface MaintenanceRequestRecord {
   resolvedAt: string | null;
   createdAt: string;
   asset?: Asset;
-  reportedBy?: Staff;
+  reportedBy?: CurrentUser;
   resolvedBy?: { id: string; firstName: string; lastName: string } | null;
   attachments?: AssetAttachment[];
 }
@@ -594,7 +583,7 @@ export interface VerificationScanRecord {
   campaign?: VerificationCampaignRecord;
   scannedBy?: { id: string; firstName: string; lastName: string } | null;
   observedLocation?: LocationNode | null;
-  observedCustodian?: Staff | null;
+  observedCustodian?: CurrentUser | null;
 }
 
 export type StockCountStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED';

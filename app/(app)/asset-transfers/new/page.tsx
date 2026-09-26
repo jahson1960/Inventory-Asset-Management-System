@@ -4,7 +4,7 @@ import { Suspense, useState, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApi } from '@/hooks/use-api';
 import { api, ApiError } from '@/lib/api-client';
-import type { Asset, AssetTransferRecord, LocationNode, Paginated, Staff } from '@/lib/types';
+import type { Asset, AssetTransferRecord, CurrentUser, LocationNode, Paginated } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardBody } from '@/components/ui/card';
 import { Field, Label, Select, Textarea } from '@/components/ui/input';
@@ -37,7 +37,7 @@ function NewAssetTransferForm() {
   const confirm = useConfirm();
 
   const selectedAsset = (assets ?? []).find((a) => a.id === assetId);
-  const { data: destinationStaffPage } = useApi<Paginated<Staff>>(toLocationId ? '/staff' : null, {
+  const { data: destinationStaffPage } = useApi<Paginated<CurrentUser>>(toLocationId ? '/users' : null, {
     branchId: locations?.find((l) => l.id === toLocationId)?.branchId,
     pageSize: 1000,
   });

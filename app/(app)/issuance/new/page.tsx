@@ -4,7 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApi } from '@/hooks/use-api';
 import { api, ApiError } from '@/lib/api-client';
-import type { Department, InventoryItem, LocationNode, Paginated, Staff } from '@/lib/types';
+import type { CurrentUser, Department, InventoryItem, LocationNode, Paginated } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardBody } from '@/components/ui/card';
 import { Field, Input, Label, Select, Textarea } from '@/components/ui/input';
@@ -18,7 +18,7 @@ export default function NewIssuancePage() {
   const items = itemsPage?.items;
   const { data: locationsPage } = useApi<Paginated<LocationNode>>('/locations', { type: 'STORE', pageSize: 1000 });
   const locations = locationsPage?.items;
-  const { data: staffPage } = useApi<Paginated<Staff>>('/staff', { pageSize: 1000 });
+  const { data: staffPage } = useApi<Paginated<CurrentUser>>('/users', { pageSize: 1000 });
   const staff = staffPage?.items;
   const { data: departmentsPage } = useApi<Paginated<Department>>('/departments', { pageSize: 1000 });
   const departments = departmentsPage?.items;
@@ -40,7 +40,7 @@ export default function NewIssuancePage() {
   function onStaffChange(id: string) {
     setRequestedById(id);
     const selected = (staff ?? []).find((s) => s.id === id);
-    if (selected) setDepartmentId(selected.departmentId);
+    if (selected) setDepartmentId(selected.departmentId ?? '');
   }
 
   async function onSubmit(event: FormEvent) {
@@ -105,7 +105,7 @@ export default function NewIssuancePage() {
                 <option value="">Select staff</option>
                 {(staff ?? []).map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.firstName} {s.lastName} ({s.staffNumber})
+                    {s.firstName} {s.lastName}{s.staffNumber ? ` (${s.staffNumber})` : ''}
                   </option>
                 ))}
               </Select>

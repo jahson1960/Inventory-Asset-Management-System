@@ -81,7 +81,7 @@ export default function AssignmentsPage() {
   }
 
   function renderActions(a: AssetAssignment) {
-    const isOwnAssignment = Boolean(user && a.staff?.userId === user.id);
+    const isOwnAssignment = Boolean(user && a.staffId === user.id);
     if (a.status === 'RETURNED') return null;
     return (
       <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
@@ -147,14 +147,7 @@ export default function AssignmentsPage() {
               },
               {
                 header: 'Staff',
-                render: (a) =>
-                  a.staff ? (
-                    <Link href={`/staff/${a.staffId}`} className="hover:underline">
-                      {a.staff.firstName} {a.staff.lastName}
-                    </Link>
-                  ) : (
-                    a.staffId
-                  ),
+                render: (a) => (a.staff ? `${a.staff.firstName} ${a.staff.lastName}` : a.staffId),
               },
               { header: 'Department', render: (a) => a.staff?.department?.name ?? '—' },
               { header: 'Assigned', render: (a) => new Date(a.assignedAt).toLocaleDateString() },

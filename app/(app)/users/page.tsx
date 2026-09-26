@@ -92,6 +92,7 @@ export default function UsersPage() {
           <Table>
             <Thead>
               <Tr>
+                <Th>Staff No.</Th>
                 <Th>Name</Th>
                 <Th>Email</Th>
                 <Th>Role</Th>
@@ -104,8 +105,12 @@ export default function UsersPage() {
             <Tbody>
               {users.map((u) => (
                 <Tr key={u.id}>
-                  <Td className="font-medium text-slate-900">
-                    {u.firstName} {u.lastName}
+                  <Td>{u.staffNumber ?? '—'}</Td>
+                  <Td>
+                    <div className="font-medium text-slate-900">
+                      {u.firstName} {u.lastName}
+                    </div>
+                    {u.jobTitle && <div className="text-xs text-slate-500">{u.jobTitle}</div>}
                   </Td>
                   <Td>{u.email}</Td>
                   <Td>
@@ -315,6 +320,9 @@ function UserFormModal({
   const [role, setRole] = useState<Role>('STAFF');
   const [branchId, setBranchId] = useState('');
   const [departmentId, setDepartmentId] = useState('');
+  const [staffNumber, setStaffNumber] = useState('');
+  const [phone, setPhone] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const confirm = useConfirm();
@@ -338,6 +346,9 @@ function UserFormModal({
         role,
         branchId: branchId || undefined,
         departmentId: departmentId || undefined,
+        staffNumber: staffNumber || undefined,
+        phone: phone || undefined,
+        jobTitle: jobTitle || undefined,
       });
       onSaved(result);
     } catch (err) {
@@ -406,6 +417,20 @@ function UserFormModal({
             </Select>
           </Field>
         )}
+        <div className="grid grid-cols-2 gap-3">
+          <Field>
+            <Label htmlFor="staffNumber">Staff number</Label>
+            <Input id="staffNumber" value={staffNumber} onChange={(e) => setStaffNumber(e.target.value)} />
+          </Field>
+          <Field>
+            <Label htmlFor="phone">Phone</Label>
+            <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </Field>
+        </div>
+        <Field>
+          <Label htmlFor="jobTitle">Job title</Label>
+          <Input id="jobTitle" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
+        </Field>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel

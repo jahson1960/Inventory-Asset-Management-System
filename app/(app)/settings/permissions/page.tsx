@@ -24,7 +24,6 @@ const ACTION_KEYS: { key: string; label: string }[] = [
   { key: 'branches.manage', label: 'Manage branches' },
   { key: 'departments.manage', label: 'Manage departments' },
   { key: 'locations.manage', label: 'Manage locations' },
-  { key: 'staff.manage', label: 'Manage staff' },
   { key: 'inventoryItems.manage', label: 'Manage inventory items' },
   { key: 'stock.manage', label: 'Manage stock (receipts/adjustments/opening balance)' },
   { key: 'issuance.create', label: 'Issue inventory' },
@@ -48,7 +47,6 @@ const ACTION_KEYS: { key: string; label: string }[] = [
 const NAV_KEYS: { key: string; label: string }[] = [
   { key: 'nav.verification', label: 'Verification Campaigns' },
   { key: 'nav.stockCounts', label: 'Stock Counts' },
-  { key: 'nav.staff', label: 'Staff' },
   { key: 'nav.branches', label: 'Branches' },
   { key: 'nav.departments', label: 'Departments' },
   { key: 'nav.locations', label: 'Locations' },

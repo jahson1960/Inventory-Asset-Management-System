@@ -8,11 +8,11 @@ import type {
   Asset,
   AssetCondition,
   AssetStatus,
+  CurrentUser,
   DisplaySettingsRecord,
   DiscrepancyType,
   LocationNode,
   Paginated,
-  Staff,
   VerificationScanRecord,
 } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
@@ -104,7 +104,7 @@ function ScanForm({
   scan: VerificationScanRecord & { campaign: { id: string; name: string; status: string } };
   onSubmitted: () => void;
 }) {
-  const { data: staffPage } = useApi<Paginated<Staff>>('/staff', { branchId: asset.branchId, pageSize: 1000 });
+  const { data: staffPage } = useApi<Paginated<CurrentUser>>('/users', { branchId: asset.branchId, pageSize: 1000 });
   const staff = staffPage?.items;
 
   const [observedLocationId, setObservedLocationId] = useState(asset.currentLocationId);

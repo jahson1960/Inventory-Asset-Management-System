@@ -4,7 +4,7 @@ import { use, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { api, ApiError, fetchAuthenticatedObjectUrl, fileUrl, uploadFile } from '@/lib/api-client';
-import type { Asset, AssetAssignment, AssetStatus, DisplaySettingsRecord, Paginated, Staff } from '@/lib/types';
+import type { Asset, AssetAssignment, AssetStatus, CurrentUser, DisplaySettingsRecord, Paginated } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
@@ -341,7 +341,7 @@ function AssignModal({
   onClose: () => void;
   onAssigned: () => void;
 }) {
-  const { data: staffPage } = useApi<Paginated<Staff>>(open ? '/staff' : null, { branchId, pageSize: 1000 });
+  const { data: staffPage } = useApi<Paginated<CurrentUser>>(open ? '/users' : null, { branchId, pageSize: 1000 });
   const staff = staffPage?.items;
   const [staffId, setStaffId] = useState('');
   const [notes, setNotes] = useState('');
@@ -375,7 +375,7 @@ function AssignModal({
             <option value="">Select staff</option>
             {(staff ?? []).map((s) => (
               <option key={s.id} value={s.id}>
-                {s.firstName} {s.lastName} ({s.staffNumber})
+                {s.firstName} {s.lastName}{s.staffNumber ? ` (${s.staffNumber})` : ''}
               </option>
             ))}
           </Select>

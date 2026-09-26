@@ -72,7 +72,6 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: 'Organization',
     items: [
-      { label: 'Staff', href: '/staff', permission: 'nav.staff' },
       { label: 'Branches', href: '/branches', permission: 'nav.branches' },
       { label: 'Departments', href: '/departments', permission: 'nav.departments' },
       { label: 'Locations', href: '/locations', permission: 'nav.locations' },
