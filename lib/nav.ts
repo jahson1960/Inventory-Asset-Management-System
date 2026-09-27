@@ -21,9 +21,9 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [{ label: 'Dashboard', href: '/dashboard', permission: 'nav.dashboard' }],
   },
   {
-    title: 'Approvals',
+    title: 'Requests',
     items: [
-      { label: 'Requests', href: '/approvals', permission: 'nav.requests' },
+      { label: 'My Approvals', href: '/approvals', permission: 'nav.requests' },
       { label: 'Asset Requests', href: '/asset-requests', permission: 'nav.assetRequests' },
       { label: 'Inventory Requests', href: '/inventory-requests', permission: 'nav.inventoryRequests' },
       { label: 'Equipment Loans', href: '/loans', permission: 'nav.loans' },

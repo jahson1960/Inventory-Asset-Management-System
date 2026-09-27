@@ -9,6 +9,6 @@ export const CARD_VIEW_LISTS: { key: string; label: string }[] = [
   { key: 'assetTransfers', label: 'Asset Transfers' },
   { key: 'inventoryTransfers', label: 'Inventory Transfers' },
   { key: 'maintenance', label: 'Maintenance' },
-  { key: 'approvals', label: 'Requests' },
+  { key: 'approvals', label: 'My Approvals' },
   { key: 'assignments', label: 'Assignments' },
 ];

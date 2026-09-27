@@ -46,7 +46,7 @@ const ACTION_KEYS: { key: string; label: string }[] = [
 
 const NAV_KEYS: { key: string; label: string }[] = [
   { key: 'nav.dashboard', label: 'Dashboard' },
-  { key: 'nav.requests', label: 'Requests' },
+  { key: 'nav.requests', label: 'My Approvals' },
   { key: 'nav.assetRequests', label: 'Asset Requests' },
   { key: 'nav.inventoryRequests', label: 'Inventory Requests' },
   { key: 'nav.loans', label: 'Equipment Loans' },

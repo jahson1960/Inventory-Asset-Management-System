@@ -52,7 +52,7 @@ export default function ApprovalsPage() {
   return (
     <div>
       <PageHeader
-        title="Requests"
+        title="My Approvals"
         description="Items awaiting your decision across every workflow type."
         action={<ViewModeToggle mode={mode} onChange={setMode} />}
       />
