@@ -81,6 +81,7 @@ export default function NewAssetPage() {
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
   const [model, setModel] = useState('');
+  const [description, setDescription] = useState('');
   const [serialNumber, setSerialNumber] = useState('');
   const [purchaseDate, setPurchaseDate] = useState('');
   const [purchaseCost, setPurchaseCost] = useState('');
@@ -119,6 +120,7 @@ export default function NewAssetPage() {
         name,
         brand: brand || undefined,
         model: model || undefined,
+        description: description || undefined,
         serialNumber: serialNumber || undefined,
         purchaseDate: purchaseDate || undefined,
         purchaseCost: purchaseCost ? Number(purchaseCost) : undefined,
@@ -207,6 +209,20 @@ export default function NewAssetPage() {
                   className="pl-9"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                />
+              </IconInput>
+            </Field>
+
+            <Field>
+              <Label htmlFor="description">Description</Label>
+              <IconInput icon={<FileTextIcon className="h-4 w-4" />} align="top">
+                <Textarea
+                  id="description"
+                  rows={2}
+                  placeholder="Enter a description of this asset…"
+                  className="pl-9"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                 />
               </IconInput>
             </Field>

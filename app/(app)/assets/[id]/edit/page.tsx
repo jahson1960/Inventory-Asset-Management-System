@@ -98,6 +98,7 @@ function EditAssetForm({ asset }: { asset: Asset }) {
   const [name, setName] = useState(asset.name);
   const [brand, setBrand] = useState(asset.brand ?? '');
   const [model, setModel] = useState(asset.model ?? '');
+  const [description, setDescription] = useState(asset.description ?? '');
   const [serialNumber, setSerialNumber] = useState(asset.serialNumber ?? '');
   const [purchaseDate, setPurchaseDate] = useState(toDateInput(asset.purchaseDate));
   const [purchaseCost, setPurchaseCost] = useState(asset.purchaseCost ?? '');
@@ -134,6 +135,7 @@ function EditAssetForm({ asset }: { asset: Asset }) {
         name,
         brand: brand || undefined,
         model: model || undefined,
+        description: description || undefined,
         serialNumber: serialNumber || undefined,
         purchaseDate: purchaseDate || undefined,
         purchaseCost: purchaseCost ? Number(purchaseCost) : undefined,
@@ -222,6 +224,20 @@ function EditAssetForm({ asset }: { asset: Asset }) {
                   className="pl-9"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                />
+              </IconInput>
+            </Field>
+
+            <Field>
+              <Label htmlFor="description">Description</Label>
+              <IconInput icon={<FileTextIcon className="h-4 w-4" />} align="top">
+                <Textarea
+                  id="description"
+                  rows={2}
+                  placeholder="Enter a description of this asset…"
+                  className="pl-9"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                 />
               </IconInput>
             </Field>

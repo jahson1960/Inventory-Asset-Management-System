@@ -120,6 +120,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
           <CardBody className="space-y-2 text-sm">
             <DetailRow label="Category" value={asset.category?.name ?? '—'} />
             <DetailRow label="Brand / Model" value={[asset.brand, asset.model].filter(Boolean).join(' / ') || '—'} />
+            {asset.description && <DetailRow label="Description" value={asset.description} />}
             <DetailRow label="Serial number" value={asset.serialNumber ?? '—'} />
             <DetailRow label="Condition" value={asset.condition} />
             <DetailRow label="Location" value={asset.currentLocation?.name ?? '—'} />

@@ -362,6 +362,7 @@ export interface Asset {
   name: string;
   brand: string | null;
   model: string | null;
+  description: string | null;
   serialNumber: string | null;
   purchaseDate: string | null;
   purchaseCost: string | null;
