@@ -354,6 +354,14 @@ export interface Supplier {
   isActive: boolean;
 }
 
+export interface Technician {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  isActive: boolean;
+}
+
 export interface Asset {
   id: string;
   assetTag: string;
@@ -524,7 +532,8 @@ export interface MaintenanceRequestRecord {
   faultDescription: string;
   status: RequestStatus;
   currentStepOrder: number;
-  technician: string | null;
+  technicianId: string | null;
+  sentToTechnicianAt: string | null;
   vendor: string | null;
   serviceDate: string | null;
   workPerformed: string | null;
@@ -536,6 +545,8 @@ export interface MaintenanceRequestRecord {
   createdAt: string;
   asset?: Asset;
   reportedBy?: CurrentUser;
+  technician?: Technician | null;
+  sentBy?: { id: string; firstName: string; lastName: string } | null;
   resolvedBy?: { id: string; firstName: string; lastName: string } | null;
   attachments?: AssetAttachment[];
 }

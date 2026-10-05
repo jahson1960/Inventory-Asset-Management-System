@@ -4,7 +4,7 @@ import { use, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { api, ApiError, fetchAuthenticatedObjectUrl, fileUrl, uploadFile } from '@/lib/api-client';
-import type { Asset, AssetAssignment, AssetStatus, CurrentUser, DisplaySettingsRecord, Paginated } from '@/lib/types';
+import type { Asset, AssetAssignment, AssetStatus, CurrentUser, DisplaySettingsRecord, Paginated, Technician } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
@@ -26,6 +26,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
   const { data: assignments, refetch: refetchAssignments } = useApi<AssetAssignment[]>(`/assets/${id}/assignments`);
   const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
   const [assignOpen, setAssignOpen] = useState(false);
+  const [sendToTechOpen, setSendToTechOpen] = useState(false);
   const [statusSubmitting, setStatusSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const confirm = useConfirm();
@@ -110,6 +111,13 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
             Report Fault
           </Button>
         </Link>
+        {asset.status !== 'UNDER_MAINTENANCE' && (
+          <RequirePermission permission="maintenance.resolve">
+            <Button variant="secondary" size="sm" onClick={() => setSendToTechOpen(true)}>
+              Send to Technician
+            </Button>
+          </RequirePermission>
+        )}
       </div>
 
       {actionError && <ErrorAlert message={actionError} />}
@@ -237,6 +245,16 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
           setAssignOpen(false);
           refetch();
           refetchAssignments();
+        }}
+      />
+
+      <SendToTechnicianModal
+        open={sendToTechOpen}
+        assetId={id}
+        onClose={() => setSendToTechOpen(false)}
+        onSent={() => {
+          setSendToTechOpen(false);
+          refetch();
         }}
       />
     </div>
@@ -394,6 +412,80 @@ function AssignModal({
           </Button>
           <Button type="submit" disabled={submitting || !staffId}>
             {submitting ? 'Assigning…' : 'Assign'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function SendToTechnicianModal({
+  open,
+  assetId,
+  onClose,
+  onSent,
+}: {
+  open: boolean;
+  assetId: string;
+  onClose: () => void;
+  onSent: () => void;
+}) {
+  const { data: techniciansPage } = useApi<Paginated<Technician>>(open ? '/technicians' : null, { pageSize: 1000 });
+  const technicians = (techniciansPage?.items ?? []).filter((t) => t.isActive);
+  const [technicianId, setTechnicianId] = useState('');
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const confirm = useConfirm();
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    const ok = await confirm({ title: 'Send this asset to the technician?', message: 'The asset will be marked under maintenance.' });
+    if (!ok) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await api.post('/maintenance-requests/send-to-technician', { assetId, technicianId, reason });
+      onSent();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to send to technician');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Send to Technician">
+      {error && <ErrorAlert message={error} />}
+      <form onSubmit={onSubmit}>
+        <Field>
+          <Label htmlFor="sendTechnicianId" required>Technician</Label>
+          <Select id="sendTechnicianId" required value={technicianId} onChange={(e) => setTechnicianId(e.target.value)}>
+            <option value="">Select technician</option>
+            {technicians.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field>
+          <Label htmlFor="sendReason" required>Reason</Label>
+          <Textarea
+            id="sendReason"
+            rows={2}
+            required
+            placeholder="e.g. Routine servicing, screen replacement…"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </Field>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={submitting || !technicianId || !reason}>
+            {submitting ? 'Sending…' : 'Send'}
           </Button>
         </div>
       </form>

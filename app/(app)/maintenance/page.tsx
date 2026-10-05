@@ -71,9 +71,9 @@ export default function MaintenancePage() {
               <ExpandedRow label="Asset" value={r.asset?.name ?? r.assetId} />
               <ExpandedRow label="Reported by" value={r.reportedBy ? `${r.reportedBy.firstName} ${r.reportedBy.lastName}` : '—'} />
               <ExpandedRow label="Fault" value={r.faultDescription} />
+              {r.technician && <ExpandedRow label="Sent to technician" value={r.technician.name} />}
               {r.status === 'FULFILLED' && (
                 <>
-                  <ExpandedRow label="Technician" value={r.technician ?? '—'} />
                   <ExpandedRow label="Vendor" value={r.vendor ?? '—'} />
                   <ExpandedRow label="Work performed" value={r.workPerformed ?? '—'} />
                   <ExpandedRow label="Parts used" value={r.partsUsed ?? '—'} />

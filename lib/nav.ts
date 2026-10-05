@@ -91,6 +91,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Inventory Categories', href: '/categories/inventory', permission: 'nav.inventoryCategories' },
       { label: 'Units of Measure', href: '/units-of-measure', permission: 'nav.unitsOfMeasure' },
       { label: 'Suppliers', href: '/suppliers', permission: 'nav.suppliers' },
+      { label: 'Technicians', href: '/technicians', permission: 'nav.technicians' },
       { label: 'Users', href: '/users', permission: 'nav.users' },
       { label: 'Audit Log', href: '/audit-log', permission: 'nav.auditLog' },
     ],

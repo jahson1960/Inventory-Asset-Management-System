@@ -5,7 +5,7 @@ import { useApi } from '@/hooks/use-api';
 import { useCanDecide } from '@/hooks/use-can-decide';
 import { usePrintOnLoad } from '@/hooks/use-print-on-load';
 import { api, ApiError, fileUrl, uploadFile } from '@/lib/api-client';
-import type { AssetCondition, MaintenanceRequestRecord } from '@/lib/types';
+import type { AssetCondition, MaintenanceRequestRecord, Paginated, Technician } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -75,9 +75,14 @@ export default function MaintenanceRequestDetailPage({ params }: { params: Promi
         <Card>
           <CardBody className="space-y-2 text-sm">
             <Row label="Fault" value={request.faultDescription} />
+            {request.technician && (
+              <Row
+                label="Sent to technician"
+                value={`${request.technician.name}${request.sentToTechnicianAt ? ` (${new Date(request.sentToTechnicianAt).toLocaleDateString()})` : ''}`}
+              />
+            )}
             {request.status === 'FULFILLED' && (
               <>
-                <Row label="Technician" value={request.technician ?? '—'} />
                 <Row label="Vendor" value={request.vendor ?? '—'} />
                 <Row label="Work performed" value={request.workPerformed ?? '—'} />
                 <Row label="Parts used" value={request.partsUsed ?? '—'} />
@@ -99,6 +104,14 @@ export default function MaintenanceRequestDetailPage({ params }: { params: Promi
           <Button variant="secondary" onClick={cancel} className="no-print">
             Cancel Request
           </Button>
+        )}
+
+        {request.status === 'APPROVED' && !request.technicianId && (
+          <RequirePermission permission="maintenance.resolve">
+            <div className="no-print">
+              <SendToTechnicianPanel requestId={id} onSent={refetch} />
+            </div>
+          </RequirePermission>
         )}
 
         {request.status === 'APPROVED' && (
@@ -157,8 +170,59 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
+function SendToTechnicianPanel({ requestId, onSent }: { requestId: string; onSent: () => void }) {
+  const { data: techniciansPage } = useApi<Paginated<Technician>>('/technicians', { pageSize: 1000 });
+  const technicians = (techniciansPage?.items ?? []).filter((t) => t.isActive);
+  const [technicianId, setTechnicianId] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const confirm = useConfirm();
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    const ok = await confirm({ title: 'Send this asset to the technician?', message: 'The asset will be marked under maintenance.' });
+    if (!ok) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await api.post(`/maintenance-requests/${requestId}/send-to-technician`, { technicianId });
+      onSent();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to send to technician');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>Send to Technician</CardHeader>
+      <CardBody>
+        {error && <ErrorAlert message={error} />}
+        <form onSubmit={onSubmit}>
+          <Field>
+            <Label htmlFor="technicianId" required>Technician</Label>
+            <Select id="technicianId" required value={technicianId} onChange={(e) => setTechnicianId(e.target.value)}>
+              <option value="">Select technician</option>
+              {technicians.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <div className="flex justify-end gap-2">
+            <Button type="submit" disabled={submitting || !technicianId}>
+              {submitting ? 'Sending…' : 'Send to Technician'}
+            </Button>
+          </div>
+        </form>
+      </CardBody>
+    </Card>
+  );
+}
+
 function ResolvePanel({ requestId, onResolved }: { requestId: string; onResolved: () => void }) {
-  const [technician, setTechnician] = useState('');
   const [vendor, setVendor] = useState('');
   const [workPerformed, setWorkPerformed] = useState('');
   const [partsUsed, setPartsUsed] = useState('');
@@ -177,7 +241,6 @@ function ResolvePanel({ requestId, onResolved }: { requestId: string; onResolved
     setError(null);
     try {
       await api.post(`/maintenance-requests/${requestId}/resolve`, {
-        technician: technician || undefined,
         vendor: vendor || undefined,
         workPerformed: workPerformed || undefined,
         partsUsed: partsUsed || undefined,
@@ -199,16 +262,10 @@ function ResolvePanel({ requestId, onResolved }: { requestId: string; onResolved
       <CardBody>
         {error && <ErrorAlert message={error} />}
         <form onSubmit={onSubmit}>
-          <div className="grid grid-cols-2 gap-3">
-            <Field>
-              <Label htmlFor="technician">Technician</Label>
-              <Input id="technician" value={technician} onChange={(e) => setTechnician(e.target.value)} />
-            </Field>
-            <Field>
-              <Label htmlFor="vendor">Vendor</Label>
-              <Input id="vendor" value={vendor} onChange={(e) => setVendor(e.target.value)} />
-            </Field>
-          </div>
+          <Field>
+            <Label htmlFor="vendor">Vendor</Label>
+            <Input id="vendor" value={vendor} onChange={(e) => setVendor(e.target.value)} />
+          </Field>
           <Field>
             <Label htmlFor="workPerformed">Work performed</Label>
             <Textarea id="workPerformed" rows={2} value={workPerformed} onChange={(e) => setWorkPerformed(e.target.value)} />
