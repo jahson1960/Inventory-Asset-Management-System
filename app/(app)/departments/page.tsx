@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import { api, ApiError } from '@/lib/api-client';
@@ -132,6 +132,16 @@ function DepartmentFormModal({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const confirm = useConfirm();
+
+  // This modal is mounted before the branch list finishes loading (it's rendered unconditionally
+  // on the page, not just when open), so the branchId state above can initialize to '' and never
+  // get corrected — useState's initializer only runs once, it doesn't re-run when `branches`
+  // arrives. Fill it in once branches load, if nothing's been picked yet.
+  useEffect(() => {
+    if (!department && !branchId && branches.length > 0) {
+      setBranchId(branches[0].id);
+    }
+  }, [department, branchId, branches]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
