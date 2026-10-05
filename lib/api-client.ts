@@ -34,10 +34,21 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   if (token) headers.Authorization = `Bearer ${token}`;
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
 
-  const response = await fetch(buildUrl(path, options.query), {
-    method: options.method ?? 'GET',
+  const method = options.method ?? 'GET';
+  // Belt-and-suspenders against Hostinger's edge CDN, which has been observed caching a GET
+  // response under its own default policy even when the origin later starts sending
+  // Cache-Control: no-store — that header only changes what the CDN does on its NEXT cold fetch
+  // for a given URL, it can't invalidate a copy already sitting at the edge from before the fix
+  // shipped (confirmed: a disabled user kept appearing in a list while a brand-new one never did
+  // — a frozen snapshot, not a logic bug). A cache-busting param makes every GET a URL the CDN
+  // has never seen, guaranteeing a miss; `cache: 'no-store'` covers the browser's own HTTP cache.
+  const query = method === 'GET' ? { ...options.query, _: Date.now() } : options.query;
+
+  const response = await fetch(buildUrl(path, query), {
+    method,
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    cache: 'no-store',
   });
 
   if (response.status === 401 && token) {
