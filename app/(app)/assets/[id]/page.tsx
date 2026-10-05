@@ -4,7 +4,8 @@ import { use, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { api, ApiError, fetchAuthenticatedObjectUrl, fileUrl, uploadFile } from '@/lib/api-client';
-import type { Asset, AssetAssignment, AssetStatus, CurrentUser, DisplaySettingsRecord, Paginated, Technician } from '@/lib/types';
+import type { Asset, AssetAssignment, AssetStatus, CurrentUser, DisplaySettingsRecord, MaintenanceRequestRecord, Paginated, Technician } from '@/lib/types';
+import { statusTone } from '@/lib/status-tone';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
@@ -24,6 +25,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
   const { id } = use(params);
   const { data: asset, loading, error, refetch } = useApi<Asset>(`/assets/${id}`);
   const { data: assignments, refetch: refetchAssignments } = useApi<AssetAssignment[]>(`/assets/${id}/assignments`);
+  const { data: maintenanceHistory, refetch: refetchMaintenance } = useApi<MaintenanceRequestRecord[]>(`/maintenance-requests/by-asset/${id}`);
   const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
   const [assignOpen, setAssignOpen] = useState(false);
   const [sendToTechOpen, setSendToTechOpen] = useState(false);
@@ -224,6 +226,42 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
             </RequirePermission>
           </div>
         </Card>
+
+        <Card className="md:col-span-3">
+          <CardHeader>Maintenance history</CardHeader>
+          {!maintenanceHistory || maintenanceHistory.length === 0 ? (
+            <EmptyState message="No maintenance or technician history for this asset." />
+          ) : (
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>Reported</Th>
+                  <Th>Fault / reason</Th>
+                  <Th>Technician</Th>
+                  <Th>Sent</Th>
+                  <Th>Status</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {maintenanceHistory.map((m) => (
+                  <Tr key={m.id}>
+                    <Td>
+                      <Link href={`/maintenance/${m.id}`} className="text-gold-dark hover:underline">
+                        {new Date(m.createdAt).toLocaleDateString()}
+                      </Link>
+                    </Td>
+                    <Td>{m.faultDescription}</Td>
+                    <Td>{m.technician?.name ?? '—'}</Td>
+                    <Td>{m.sentToTechnicianAt ? new Date(m.sentToTechnicianAt).toLocaleDateString() : '—'}</Td>
+                    <Td>
+                      <Badge tone={statusTone(m.status)}>{m.status === 'FULFILLED' ? 'RESOLVED' : m.status}</Badge>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          )}
+        </Card>
       </div>
 
       <div className="mt-4 grid gap-4 md:grid-cols-3">
@@ -255,6 +293,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
         onSent={() => {
           setSendToTechOpen(false);
           refetch();
+          refetchMaintenance();
         }}
       />
     </div>
