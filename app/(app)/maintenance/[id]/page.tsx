@@ -83,6 +83,10 @@ export default function MaintenanceRequestDetailPage({ params }: { params: Promi
             )}
             {request.status === 'FULFILLED' && (
               <>
+                <Row
+                  label="Returned"
+                  value={`${request.resolvedAt ? new Date(request.resolvedAt).toLocaleDateString() : '—'}${request.resolvedBy ? ` by ${request.resolvedBy.firstName} ${request.resolvedBy.lastName}` : ''}`}
+                />
                 <Row label="Vendor" value={request.vendor ?? '—'} />
                 <Row label="Work performed" value={request.workPerformed ?? '—'} />
                 <Row label="Parts used" value={request.partsUsed ?? '—'} />
@@ -117,7 +121,7 @@ export default function MaintenanceRequestDetailPage({ params }: { params: Promi
         {request.status === 'APPROVED' && (
           <RequirePermission permission="maintenance.resolve">
             <div className="no-print">
-              <ResolvePanel requestId={id} onResolved={refetch} />
+              <ResolvePanel requestId={id} sentToTechnician={Boolean(request.technicianId)} onResolved={refetch} />
             </div>
           </RequirePermission>
         )}
@@ -222,7 +226,15 @@ function SendToTechnicianPanel({ requestId, onSent }: { requestId: string; onSen
   );
 }
 
-function ResolvePanel({ requestId, onResolved }: { requestId: string; onResolved: () => void }) {
+function ResolvePanel({
+  requestId,
+  sentToTechnician,
+  onResolved,
+}: {
+  requestId: string;
+  sentToTechnician: boolean;
+  onResolved: () => void;
+}) {
   const [vendor, setVendor] = useState('');
   const [workPerformed, setWorkPerformed] = useState('');
   const [partsUsed, setPartsUsed] = useState('');
@@ -235,7 +247,10 @@ function ResolvePanel({ requestId, onResolved }: { requestId: string; onResolved
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    const ok = await confirm({ title: 'Resolve this fault?', message: 'The asset will be marked back in store.' });
+    const ok = await confirm({
+      title: sentToTechnician ? 'Record this asset as returned?' : 'Resolve this fault?',
+      message: 'The asset will be marked back in store.',
+    });
     if (!ok) return;
     setSubmitting(true);
     setError(null);
@@ -258,7 +273,7 @@ function ResolvePanel({ requestId, onResolved }: { requestId: string; onResolved
 
   return (
     <Card>
-      <CardHeader>Resolve this fault</CardHeader>
+      <CardHeader>{sentToTechnician ? 'Record Return' : 'Resolve this fault'}</CardHeader>
       <CardBody>
         {error && <ErrorAlert message={error} />}
         <form onSubmit={onSubmit}>
@@ -306,7 +321,7 @@ function ResolvePanel({ requestId, onResolved }: { requestId: string; onResolved
           </Field>
           <div className="flex justify-end gap-2">
             <Button type="submit" disabled={submitting}>
-              {submitting ? 'Resolving…' : 'Resolve'}
+              {submitting ? 'Saving…' : sentToTechnician ? 'Mark Returned' : 'Resolve'}
             </Button>
           </div>
         </form>

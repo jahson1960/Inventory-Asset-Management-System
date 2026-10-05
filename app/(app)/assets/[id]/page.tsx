@@ -239,6 +239,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
                   <Th>Fault / reason</Th>
                   <Th>Technician</Th>
                   <Th>Sent</Th>
+                  <Th>Returned</Th>
                   <Th>Status</Th>
                 </Tr>
               </Thead>
@@ -253,6 +254,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
                     <Td>{m.faultDescription}</Td>
                     <Td>{m.technician?.name ?? '—'}</Td>
                     <Td>{m.sentToTechnicianAt ? new Date(m.sentToTechnicianAt).toLocaleDateString() : '—'}</Td>
+                    <Td>{m.resolvedAt ? new Date(m.resolvedAt).toLocaleDateString() : '—'}</Td>
                     <Td>
                       <Badge tone={statusTone(m.status)}>{m.status === 'FULFILLED' ? 'RESOLVED' : m.status}</Badge>
                     </Td>

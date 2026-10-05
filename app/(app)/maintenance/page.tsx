@@ -74,6 +74,7 @@ export default function MaintenancePage() {
               {r.technician && <ExpandedRow label="Sent to technician" value={r.technician.name} />}
               {r.status === 'FULFILLED' && (
                 <>
+                  <ExpandedRow label="Returned" value={r.resolvedAt ? new Date(r.resolvedAt).toLocaleDateString() : '—'} />
                   <ExpandedRow label="Vendor" value={r.vendor ?? '—'} />
                   <ExpandedRow label="Work performed" value={r.workPerformed ?? '—'} />
                   <ExpandedRow label="Parts used" value={r.partsUsed ?? '—'} />
