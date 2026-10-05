@@ -85,6 +85,9 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
         action={
           <RequirePermission permission="assets.manage">
             <div className="flex gap-2">
+              <Link href={`/assets/${asset.id}/edit`}>
+                <Button variant="secondary">Edit</Button>
+              </Link>
               {!asset.currentCustodianId && (
                 <Button onClick={() => setAssignOpen(true)}>Assign to Staff</Button>
               )}
