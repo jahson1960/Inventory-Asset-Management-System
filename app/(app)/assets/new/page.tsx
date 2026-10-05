@@ -11,6 +11,7 @@ import type {
   AssetCategory,
   AssetCondition,
   AssetTrackingType,
+  Branch,
   DepreciationMethod,
   DisplaySettingsRecord,
   LocationNode,
@@ -59,6 +60,8 @@ export default function NewAssetPage() {
     pageSize: 1000,
   });
   const categories = categoriesPage?.items;
+  const { data: branchesPage } = useApi<Paginated<Branch>>('/branches', { pageSize: 1000 });
+  const branches = branchesPage?.items;
   const { data: locationsPage, refetch: refetchLocations } = useApi<Paginated<LocationNode>>('/locations', { pageSize: 1000 });
   const locations = locationsPage?.items;
   const { data: suppliersPage, refetch: refetchSuppliers } = useApi<Paginated<Supplier>>('/suppliers', { pageSize: 1000 });
@@ -86,7 +89,13 @@ export default function NewAssetPage() {
   const [warrantyEndDate, setWarrantyEndDate] = useState('');
   const [warrantyProvider, setWarrantyProvider] = useState('');
   const [condition, setCondition] = useState<AssetCondition>('NEW');
+  const [branchId, setBranchId] = useState('');
   const [currentLocationId, setCurrentLocationId] = useState('');
+  // The asset's branch is derived server-side from its location (there's no separate branchId
+  // field to submit) — this just narrows the location list to the chosen branch, since the
+  // asset's branch is what the "assign to staff" picker later filters staff by, and picking a
+  // location in the wrong branch silently misaligned the two.
+  const locationsInBranch = (locations ?? []).filter((l) => !branchId || l.branchId === branchId);
   const [usefulLifeMonths, setUsefulLifeMonths] = useState('');
   const [salvageValue, setSalvageValue] = useState('');
   const [depreciationMethod, setDepreciationMethod] = useState<'' | DepreciationMethod>('');
@@ -230,6 +239,31 @@ export default function NewAssetPage() {
             </Field>
 
             <Field>
+              <Label htmlFor="branch">
+                Branch <Required />
+              </Label>
+              <IconInput icon={<BuildingIcon className="h-4 w-4" />}>
+                <Select
+                  id="branch"
+                  required
+                  className="pl-9"
+                  value={branchId}
+                  onChange={(e) => {
+                    setBranchId(e.target.value);
+                    setCurrentLocationId('');
+                  }}
+                >
+                  <option value="">Select branch</option>
+                  {(branches ?? []).map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </Select>
+              </IconInput>
+            </Field>
+
+            <Field>
               <div className="mb-1 flex items-center justify-between">
                 <Label htmlFor="location">
                   Current location <Required />
@@ -248,12 +282,13 @@ export default function NewAssetPage() {
                 <Select
                   id="location"
                   required
+                  disabled={!branchId}
                   className="pl-9"
                   value={currentLocationId}
                   onChange={(e) => setCurrentLocationId(e.target.value)}
                 >
-                  <option value="">Select location</option>
-                  {(locations ?? []).map((l) => (
+                  <option value="">{branchId ? 'Select location' : 'Select a branch first'}</option>
+                  {locationsInBranch.map((l) => (
                     <option key={l.id} value={l.id}>
                       {l.name} ({l.type})
                     </option>
@@ -550,6 +585,7 @@ export default function NewAssetPage() {
         onClose={() => setQuickCreateOpen(null)}
         onCreated={(location) => {
           refetchLocations();
+          setBranchId(location.branchId);
           setCurrentLocationId(location.id);
         }}
       />
