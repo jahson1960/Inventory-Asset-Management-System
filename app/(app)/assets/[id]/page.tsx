@@ -450,12 +450,12 @@ function StatusPill({
 
 function IconDetailRow({ icon, label, value, children }: { icon: ReactNode; label: string; value?: string; children?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-1.5">
-      <span className="flex items-center gap-2 text-sm text-slate-500">
+    <div className="flex items-start gap-3 py-1.5">
+      <span className="flex w-36 shrink-0 items-center gap-2 text-sm text-slate-500">
         <span className="text-slate-400">{icon}</span>
         {label}
       </span>
-      {children ?? <span className="text-sm font-semibold text-slate-900">{value}</span>}
+      <div className="min-w-0 flex-1">{children ?? <span className="text-sm font-semibold text-slate-900">{value}</span>}</div>
     </div>
   );
 }
