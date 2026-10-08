@@ -1,12 +1,12 @@
 'use client';
 
-import { use, useEffect, useState, type FormEvent } from 'react';
+import { use, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { api, ApiError, fetchAuthenticatedObjectUrl, fileUrl, uploadFile } from '@/lib/api-client';
 import type { Asset, AssetAssignment, AssetStatus, CurrentUser, DisplaySettingsRecord, MaintenanceRequestRecord, Paginated, Technician } from '@/lib/types';
-import { statusTone } from '@/lib/status-tone';
-import { PageHeader } from '@/components/ui/page-header';
+import { statusTone, type BadgeTone } from '@/lib/status-tone';
+import { cn } from '@/lib/cn';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -18,8 +18,48 @@ import { PageLoading } from '@/components/ui/spinner';
 import { RequirePermission } from '@/components/require-permission';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { ASSIGNMENT_STATUS_LABELS, ASSIGNMENT_STATUS_TONE } from '@/lib/assignment-status';
+import {
+  AlertTriangleIcon,
+  BanknoteIcon,
+  BarChart3Icon,
+  BarcodeIcon,
+  CalendarIcon,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DownloadIcon,
+  FileClockIcon,
+  FileTextIcon,
+  ListIcon,
+  MapPinIcon,
+  MonitorIcon,
+  PaperclipIcon,
+  PencilIcon,
+  PrinterIcon,
+  ShieldIcon,
+  TagIcon,
+  UploadCloudIcon,
+  UserIcon,
+} from '@/components/icons/form-icons';
 
 const STATUSES: AssetStatus[] = ['IN_STORE', 'ASSIGNED', 'UNDER_MAINTENANCE', 'RETIRED', 'DISPOSED', 'LOST'];
+
+const ASSET_STATUS_TONE: Record<AssetStatus, BadgeTone> = {
+  IN_STORE: 'green',
+  ASSIGNED: 'blue',
+  UNDER_MAINTENANCE: 'amber',
+  RETIRED: 'neutral',
+  DISPOSED: 'red',
+  LOST: 'red',
+};
+
+const CONDITION_TONE: Record<string, BadgeTone> = {
+  NEW: 'green',
+  GOOD: 'green',
+  FAIR: 'amber',
+  POOR: 'amber',
+  DAMAGED: 'red',
+};
 
 export default function AssetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -82,91 +122,136 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div>
-      <PageHeader
-        title={asset.name}
-        description={`Asset tag: ${asset.assetTag}`}
-        action={
-          <RequirePermission permission="assets.manage">
-            <div className="flex gap-2">
+      <div className="mb-4 flex items-center gap-1.5 text-sm text-slate-500">
+        <Link href="/assets" className="flex items-center hover:text-slate-700">
+          <ChevronLeftIcon className="h-4 w-4" />
+        </Link>
+        <Link href="/assets" className="hover:text-slate-700">
+          Assets
+        </Link>
+        <ChevronRightIcon className="h-3.5 w-3.5" />
+        <span className="font-medium text-slate-700">Asset Details</span>
+      </div>
+
+      <Card className="mb-4">
+        <CardBody className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-navy text-white">
+              <MonitorIcon className="h-7 w-7" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-navy">{asset.assetTag}</h1>
+              <p className="mt-0.5 text-sm text-slate-500">{asset.name}</p>
+              {asset.category && (
+                <span className="mt-2 inline-flex items-center rounded-full bg-gold-light px-2.5 py-0.5 text-xs font-medium text-gold-dark">
+                  {asset.category.name}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href={`/maintenance/new?assetId=${asset.id}`}>
+              <Button variant="outline-danger" size="sm">
+                <AlertTriangleIcon className="h-4 w-4" />
+                Report Fault
+              </Button>
+            </Link>
+            {asset.status !== 'UNDER_MAINTENANCE' && (
+              <RequirePermission permission="maintenance.resolve">
+                <Button variant="secondary" size="sm" onClick={() => setSendToTechOpen(true)}>
+                  Send to Technician
+                </Button>
+              </RequirePermission>
+            )}
+            <RequirePermission permission="assets.manage">
               <Link href={`/assets/${asset.id}/edit`}>
-                <Button variant="secondary">Edit</Button>
+                <Button variant="secondary" size="sm">
+                  <PencilIcon className="h-4 w-4" />
+                  Edit Asset
+                </Button>
               </Link>
               {!asset.currentCustodianId && (
-                <Button onClick={() => setAssignOpen(true)}>Assign to Staff</Button>
+                <Button size="sm" onClick={() => setAssignOpen(true)}>
+                  Assign to Staff
+                </Button>
               )}
               {activeAssignment && (
-                <Button variant="secondary" onClick={onReturn}>
+                <Button variant="secondary" size="sm" onClick={onReturn}>
                   Return
                 </Button>
               )}
               <Link href={`/asset-transfers/new?assetId=${asset.id}`}>
-                <Button variant="secondary">Request Transfer</Button>
+                <Button variant="secondary" size="sm">
+                  Request Transfer
+                </Button>
               </Link>
-            </div>
-          </RequirePermission>
-        }
-      />
-
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Link href={`/maintenance/new?assetId=${asset.id}`}>
-          <Button variant="secondary" size="sm">
-            Report Fault
-          </Button>
-        </Link>
-        {asset.status !== 'UNDER_MAINTENANCE' && (
-          <RequirePermission permission="maintenance.resolve">
-            <Button variant="secondary" size="sm" onClick={() => setSendToTechOpen(true)}>
-              Send to Technician
-            </Button>
-          </RequirePermission>
-        )}
-      </div>
+              <StatusPill status={asset.status} disabled={statusSubmitting} onChange={onStatusChange} />
+            </RequirePermission>
+          </div>
+        </CardBody>
+      </Card>
 
       {actionError && <ErrorAlert message={actionError} />}
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>Details</CardHeader>
-          <CardBody className="space-y-2 text-sm">
-            <DetailRow label="Category" value={asset.category?.name ?? '—'} />
-            <DetailRow label="Brand / Model" value={[asset.brand, asset.model].filter(Boolean).join(' / ') || '—'} />
-            {asset.description && <DetailRow label="Description" value={asset.description} />}
-            <DetailRow label="Serial number" value={asset.serialNumber ?? '—'} />
-            <DetailRow label="Condition" value={asset.condition} />
-            <DetailRow label="Location" value={asset.currentLocation?.name ?? '—'} />
-            <DetailRow label="Custodian">
+          <CardBody className="space-y-0.5">
+            <IconDetailRow icon={<ListIcon className="h-4 w-4" />} label="Category" value={asset.category?.name ?? '—'} />
+            <IconDetailRow
+              icon={<TagIcon className="h-4 w-4" />}
+              label="Brand / Model"
+              value={[asset.brand, asset.model].filter(Boolean).join(' / ') || '—'}
+            />
+            {asset.description && (
+              <IconDetailRow icon={<FileTextIcon className="h-4 w-4" />} label="Description" value={asset.description} />
+            )}
+            <IconDetailRow icon={<BarcodeIcon className="h-4 w-4" />} label="Serial number" value={asset.serialNumber ?? '—'} />
+            <IconDetailRow icon={<ShieldIcon className="h-4 w-4" />} label="Condition">
+              <DotPill label={asset.condition} tone={CONDITION_TONE[asset.condition] ?? 'neutral'} />
+            </IconDetailRow>
+            <IconDetailRow icon={<MapPinIcon className="h-4 w-4" />} label="Location" value={asset.currentLocation?.name ?? '—'} />
+            <IconDetailRow icon={<UserIcon className="h-4 w-4" />} label="Custodian">
               {asset.currentCustodian ? (
-                `${asset.currentCustodian.firstName} ${asset.currentCustodian.lastName}`
+                <span className="text-sm font-semibold text-slate-900">
+                  {asset.currentCustodian.firstName} {asset.currentCustodian.lastName}
+                </span>
               ) : (
-                <span className="text-slate-400">Unassigned</span>
+                <span className="text-sm text-slate-400">Unassigned</span>
               )}
-            </DetailRow>
-            <DetailRow label="Purchase cost" value={asset.purchaseCost ? `₦${Number(asset.purchaseCost).toLocaleString()}` : '—'} />
-            <DetailRow label="Warranty ends" value={asset.warrantyEndDate ? new Date(asset.warrantyEndDate).toLocaleDateString() : '—'} />
+            </IconDetailRow>
+            <IconDetailRow
+              icon={<BanknoteIcon className="h-4 w-4" />}
+              label="Purchase cost"
+              value={asset.purchaseCost ? `₦${Number(asset.purchaseCost).toLocaleString()}` : '—'}
+            />
+            <IconDetailRow
+              icon={<CalendarIcon className="h-4 w-4" />}
+              label="Warranty ends"
+              value={asset.warrantyEndDate ? new Date(asset.warrantyEndDate).toLocaleDateString() : '—'}
+            />
+
             <RequirePermission permission="assets.manage">
-              <div className="pt-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  id="status"
-                  value={asset.status}
-                  disabled={statusSubmitting}
-                  onChange={(e) => onStatusChange(e.target.value as AssetStatus)}
-                >
-                  {STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {s.replace('_', ' ')}
-                    </option>
-                  ))}
-                </Select>
+              <div className={cn('mt-3 rounded-lg border p-3', PILL_TONE_CLASSES[ASSET_STATUS_TONE[asset.status]])}>
+                <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide opacity-70">Status</p>
+                <StatusPill status={asset.status} disabled={statusSubmitting} onChange={onStatusChange} />
               </div>
             </RequirePermission>
           </CardBody>
         </Card>
 
         <Card className="md:col-span-2">
-          <CardHeader>Assignment history</CardHeader>
+          <CardHeader className="flex items-center gap-2">
+            <FileClockIcon className="h-4 w-4 text-slate-400" />
+            Assignment history
+          </CardHeader>
           {!assignments || assignments.length === 0 ? (
-            <EmptyState message="This asset has never been assigned." />
+            <RichEmptyState
+              icon={<FileClockIcon className="h-7 w-7" />}
+              title="No assignment history yet"
+              subtitle="This asset has never been assigned."
+            />
           ) : (
             <Table>
               <Thead>
@@ -197,10 +282,17 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
               </Tbody>
             </Table>
           )}
+        </Card>
 
-          <div className="border-t border-slate-200 p-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Attachments</p>
-            {asset.attachments && asset.attachments.length > 0 ? (
+        <Card className="md:col-span-3">
+          <CardHeader className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <PaperclipIcon className="h-4 w-4 text-slate-400" />
+              Attachments
+            </span>
+          </CardHeader>
+          <CardBody>
+            {asset.attachments && asset.attachments.length > 0 && (
               <ul className="mb-3 space-y-1 text-sm">
                 {asset.attachments.map((att) => (
                   <li key={att.id}>
@@ -210,21 +302,14 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
                   </li>
                 ))}
               </ul>
-            ) : (
-              <p className="mb-3 text-sm text-slate-400">No documents or photos attached.</p>
+            )}
+            {!(asset.attachments && asset.attachments.length > 0) && (
+              <p className="mb-3 text-center text-xs text-slate-400">No documents or photos attached yet.</p>
             )}
             <RequirePermission permission="assets.manage">
-              <input
-                type="file"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) onUpload(file);
-                  e.target.value = '';
-                }}
-                className="text-sm"
-              />
+              <AttachmentsDropzone onFile={onUpload} />
             </RequirePermission>
-          </div>
+          </CardBody>
         </Card>
 
         <Card className="md:col-span-3">
@@ -271,6 +356,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
           assetId={id}
           assetTag={asset.assetTag}
           assetName={asset.name}
+          serialNumber={asset.serialNumber}
           qrCodeEnabled={displaySettings?.qrCodeEnabled ?? false}
         />
         <DepreciationCard asset={asset} />
@@ -302,15 +388,141 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
   );
 }
 
+const PILL_TONE_CLASSES: Record<BadgeTone, string> = {
+  neutral: 'bg-slate-50 text-slate-600 border-slate-200',
+  green: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  amber: 'bg-amber-50 text-amber-700 border-amber-200',
+  red: 'bg-red-50 text-red-700 border-red-200',
+  blue: 'bg-blue-50 text-blue-700 border-blue-200',
+};
+
+/** A small rounded, bordered pill with a leading dot — read-only display of a status-like value
+ *  (e.g. asset condition), visually distinct from the clickable StatusPill below. */
+function DotPill({ label, tone }: { label: string; tone: BadgeTone }) {
+  return (
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold', PILL_TONE_CLASSES[tone])}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      {label}
+    </span>
+  );
+}
+
+/** Looks like DotPill plus a chevron, but a native <select> is overlaid transparently on top so
+ *  it stays a real, accessible, keyboard-operable dropdown — just visually styled as a pill
+ *  instead of a standard boxy <select>. */
+function StatusPill({
+  status,
+  disabled,
+  onChange,
+}: {
+  status: AssetStatus;
+  disabled?: boolean;
+  onChange: (status: AssetStatus) => void;
+}) {
+  const tone = ASSET_STATUS_TONE[status];
+  return (
+    <span
+      className={cn(
+        'relative inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold',
+        PILL_TONE_CLASSES[tone],
+        disabled && 'opacity-60',
+      )}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      {status.replace('_', ' ')}
+      <ChevronDownIcon className="h-3.5 w-3.5" />
+      <select
+        aria-label="Change asset status"
+        className="absolute inset-0 h-full w-full cursor-pointer appearance-none opacity-0 disabled:cursor-not-allowed"
+        value={status}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value as AssetStatus)}
+      >
+        {STATUSES.map((s) => (
+          <option key={s} value={s}>
+            {s.replace('_', ' ')}
+          </option>
+        ))}
+      </select>
+    </span>
+  );
+}
+
+function IconDetailRow({ icon, label, value, children }: { icon: ReactNode; label: string; value?: string; children?: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-1.5">
+      <span className="flex items-center gap-2 text-sm text-slate-500">
+        <span className="text-slate-400">{icon}</span>
+        {label}
+      </span>
+      {children ?? <span className="text-sm font-semibold text-slate-900">{value}</span>}
+    </div>
+  );
+}
+
+/** A richer empty state than the shared, single-line EmptyState: a circular icon illustration
+ *  plus a bold title and a muted subtitle — used where the illustration adds real context
+ *  (e.g. "this asset has never been assigned") rather than being purely decorative. */
+function RichEmptyState({ icon, title, subtitle }: { icon: ReactNode; title: string; subtitle: string }) {
+  return (
+    <div className="flex flex-col items-center gap-3 px-4 py-14 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-cream text-navy/30">{icon}</div>
+      <div>
+        <p className="font-semibold text-slate-900">{title}</p>
+        <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+      </div>
+    </div>
+  );
+}
+
+function AttachmentsDropzone({ onFile }: { onFile: (file: File) => void }) {
+  const [dragOver, setDragOver] = useState(false);
+
+  return (
+    <label
+      className={cn(
+        'flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border-2 border-dashed px-4 py-8 text-center transition-colors',
+        dragOver ? 'border-gold bg-gold-light/30' : 'border-slate-200 bg-slate-50 hover:bg-slate-100',
+      )}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file) onFile(file);
+      }}
+    >
+      <UploadCloudIcon className="h-8 w-8 text-slate-400" />
+      <p className="text-sm font-medium text-slate-600">Choose files or drag and drop here</p>
+      <p className="text-xs text-slate-400">PDF, JPG, PNG, DOC, DOCX (Max 10MB each)</p>
+      <input
+        type="file"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onFile(file);
+          e.target.value = '';
+        }}
+      />
+    </label>
+  );
+}
+
 function QrLabelCard({
   assetId,
   assetTag,
   assetName,
+  serialNumber,
   qrCodeEnabled,
 }: {
   assetId: string;
   assetTag: string;
   assetName: string;
+  serialNumber: string | null;
   qrCodeEnabled: boolean;
 }) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -342,20 +554,41 @@ function QrLabelCard({
 
   return (
     <Card>
-      <CardHeader>Asset Label</CardHeader>
-      <CardBody className="flex flex-col items-center gap-2 text-center">
-        {qrCodeEnabled &&
-          (imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt={`QR code for ${assetTag}`} width={160} height={160} />
-          ) : (
-            <div className="flex h-40 w-40 items-center justify-center text-xs text-slate-400">Loading…</div>
-          ))}
-        <p className="text-lg font-semibold text-slate-900">{assetTag}</p>
-        <p className="text-xs text-slate-500">{assetName}</p>
-        <Button variant="secondary" size="sm" onClick={() => window.print()} className="no-print">
-          Print Label
-        </Button>
+      <CardHeader className="flex items-center gap-2">
+        <TagIcon className="h-4 w-4 text-slate-400" />
+        Asset Label
+      </CardHeader>
+      <CardBody>
+        <div className="flex items-center gap-3 rounded-lg bg-gold-light/40 p-3">
+          {qrCodeEnabled &&
+            (imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={imageUrl} alt={`QR code for ${assetTag}`} width={56} height={56} className="shrink-0 rounded bg-white p-1" />
+            ) : (
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded bg-white text-[10px] text-slate-400">
+                Loading…
+              </div>
+            ))}
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-navy">{assetTag}</p>
+            <p className="truncate text-xs text-slate-500">{assetName}</p>
+            {serialNumber && <p className="truncate text-xs text-slate-400">S/N: {serialNumber}</p>}
+          </div>
+        </div>
+        <div className="mt-3 flex gap-2">
+          <Button variant="secondary" size="sm" onClick={() => window.print()} className="no-print flex-1">
+            <PrinterIcon className="h-4 w-4" />
+            Print Label
+          </Button>
+          {imageUrl && (
+            <a href={imageUrl} download={`${assetTag}-label.png`} className="no-print flex-1">
+              <Button size="sm" className="w-full">
+                <DownloadIcon className="h-4 w-4" />
+                Download
+              </Button>
+            </a>
+          )}
+        </div>
       </CardBody>
     </Card>
   );
@@ -365,29 +598,33 @@ function DepreciationCard({ asset }: { asset: Asset }) {
   const d = asset.depreciation;
   return (
     <Card>
-      <CardHeader>Depreciation</CardHeader>
-      <CardBody className="space-y-2 text-sm">
-        {d ? (
-          <>
-            <DetailRow label="Method" value={d.method.replace('_', ' ')} />
-            <DetailRow label="Months elapsed" value={String(d.monthsElapsed)} />
-            <DetailRow label="Accumulated depreciation" value={`₦${Number(d.accumulatedDepreciation).toLocaleString()}`} />
-            <DetailRow label="Net book value" value={`₦${Number(d.netBookValue).toLocaleString()}`} />
-          </>
-        ) : (
-          <p className="text-slate-400">Not enough data (purchase cost, purchase date, and useful life or a rate are required).</p>
-        )}
-      </CardBody>
+      <CardHeader className="flex items-center gap-2">
+        <BarChart3Icon className="h-4 w-4 text-slate-400" />
+        Depreciation
+      </CardHeader>
+      {d ? (
+        <CardBody className="space-y-0.5">
+          <IconDetailRow icon={<ListIcon className="h-4 w-4" />} label="Method" value={d.method.replace('_', ' ')} />
+          <IconDetailRow icon={<CalendarIcon className="h-4 w-4" />} label="Months elapsed" value={String(d.monthsElapsed)} />
+          <IconDetailRow
+            icon={<BanknoteIcon className="h-4 w-4" />}
+            label="Accumulated depreciation"
+            value={`₦${Number(d.accumulatedDepreciation).toLocaleString()}`}
+          />
+          <IconDetailRow
+            icon={<BanknoteIcon className="h-4 w-4" />}
+            label="Net book value"
+            value={`₦${Number(d.netBookValue).toLocaleString()}`}
+          />
+        </CardBody>
+      ) : (
+        <RichEmptyState
+          icon={<BarChart3Icon className="h-7 w-7" />}
+          title="Not enough data to calculate depreciation."
+          subtitle="Purchase cost, purchase date, and useful life or a rate are required."
+        />
+      )}
     </Card>
-  );
-}
-
-function DetailRow({ label, value, children }: { label: string; value?: string; children?: React.ReactNode }) {
-  return (
-    <div className="flex justify-between gap-2">
-      <span className="text-slate-500">{label}</span>
-      {children ?? <span className="font-medium text-slate-900">{value}</span>}
-    </div>
   );
 }
 
