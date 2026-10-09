@@ -50,6 +50,21 @@ export default function AssignmentsPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const confirm = useConfirm();
 
+  async function onAcknowledge(id: string) {
+    const ok = await confirm({
+      title: 'Acknowledge receipt of this asset?',
+      message: "Confirms you've received it and the record is accurate.",
+    });
+    if (!ok) return;
+    setActionError(null);
+    try {
+      await api.post(`/assignments/${id}/acknowledge`, {});
+      refetch();
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Failed to acknowledge assignment');
+    }
+  }
+
   async function onRequestReturn(id: string) {
     const ok = await confirm({
       title: 'Request to return this asset?',
@@ -85,6 +100,11 @@ export default function AssignmentsPage() {
     if (a.status === 'RETURNED') return null;
     return (
       <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+        {isOwnAssignment && !a.acknowledged && (
+          <button onClick={() => onAcknowledge(a.id)} className="text-xs font-medium text-gold-dark hover:text-gold-dark/80">
+            Acknowledge
+          </button>
+        )}
         {a.status === 'ACTIVE' && isOwnAssignment && (
           <button onClick={() => onRequestReturn(a.id)} className="text-xs font-medium text-slate-600 hover:text-slate-900">
             Request Return
