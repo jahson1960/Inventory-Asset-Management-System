@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, type FormEvent } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useApi } from '@/hooks/use-api';
 import { usePermissions } from '@/hooks/use-permissions';
 import { api, ApiError } from '@/lib/api-client';
@@ -18,6 +18,7 @@ import { Card, CardBody } from '@/components/ui/card';
 import { Field, Input, Label, Select, Textarea } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/ui/alert';
+import { PageLoading } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { QuickCreateCategoryModal } from '@/components/quick-create-category-modal';
 import { QuickCreateLocationModal } from '@/components/quick-create-location-modal';
@@ -38,6 +39,26 @@ import {
 } from '@/components/icons/form-icons';
 
 export default function NewInventoryItemPage() {
+  return (
+    <Suspense>
+      <NewInventoryItemPageContent />
+    </Suspense>
+  );
+}
+
+function NewInventoryItemPageContent() {
+  const searchParams = useSearchParams();
+  const duplicateFromId = searchParams.get('duplicateFrom');
+  const { data: duplicateSource, loading: duplicateLoading } = useApi<InventoryItem>(
+    duplicateFromId ? `/inventory-items/${duplicateFromId}` : null,
+  );
+
+  if (duplicateFromId && duplicateLoading) return <PageLoading />;
+
+  return <NewInventoryItemForm duplicateSource={duplicateFromId ? (duplicateSource ?? null) : null} />;
+}
+
+function NewInventoryItemForm({ duplicateSource }: { duplicateSource: InventoryItem | null }) {
   const router = useRouter();
   const { can } = usePermissions();
   const { data: categoriesPage, refetch: refetchCategories } = useApi<Paginated<InventoryCategory>>('/inventory-categories', {
@@ -60,18 +81,20 @@ export default function NewInventoryItemPage() {
   const canQuickCreateSupplier = inlineCreateEnabled && can('suppliers.manage');
   const [quickCreateOpen, setQuickCreateOpen] = useState<'category' | 'location' | 'supplier' | null>(null);
 
+  // Item code and barcode are never copied — both are meant to uniquely identify one catalogue
+  // entry / physical label, so carrying them over would just collide with the original.
   const [itemCode, setItemCode] = useState('');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [categoryId, setCategoryId] = useState('');
-  const [brand, setBrand] = useState('');
-  const [baseUnitId, setBaseUnitId] = useState('');
+  const [name, setName] = useState(duplicateSource?.name ?? '');
+  const [description, setDescription] = useState(duplicateSource?.description ?? '');
+  const [categoryId, setCategoryId] = useState(duplicateSource?.categoryId ?? '');
+  const [brand, setBrand] = useState(duplicateSource?.brand ?? '');
+  const [baseUnitId, setBaseUnitId] = useState(duplicateSource?.baseUnitId ?? '');
   const [barcode, setBarcode] = useState('');
-  const [preferredSupplier, setPreferredSupplier] = useState('');
-  const [unitCost, setUnitCost] = useState('');
-  const [minStockLevel, setMinStockLevel] = useState('0');
-  const [primaryStoreLocationId, setPrimaryStoreLocationId] = useState('');
-  const [notes, setNotes] = useState('');
+  const [preferredSupplier, setPreferredSupplier] = useState(duplicateSource?.preferredSupplier ?? '');
+  const [unitCost, setUnitCost] = useState(duplicateSource?.unitCost ?? '');
+  const [minStockLevel, setMinStockLevel] = useState(duplicateSource?.minStockLevel ?? '0');
+  const [primaryStoreLocationId, setPrimaryStoreLocationId] = useState(duplicateSource?.primaryStoreLocationId ?? '');
+  const [notes, setNotes] = useState(duplicateSource?.notes ?? '');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const confirm = useConfirm();
@@ -109,9 +132,13 @@ export default function NewInventoryItemPage() {
     <div className="max-w-4xl">
       <FormPageHeader
         icon={<BoxIcon className="h-7 w-7" />}
-        title="New Inventory Item"
-        description="Add an item to the consumable inventory catalogue."
-        breadcrumb={[{ label: 'Inventory', href: '/inventory' }, { label: 'New Item' }]}
+        title={duplicateSource ? 'Duplicate Inventory Item' : 'New Inventory Item'}
+        description={
+          duplicateSource
+            ? `Copied from ${duplicateSource.itemCode}. Set a new item code (and barcode, if used), adjust anything else, then save.`
+            : 'Add an item to the consumable inventory catalogue.'
+        }
+        breadcrumb={[{ label: 'Inventory', href: '/inventory' }, { label: duplicateSource ? 'Duplicate Item' : 'New Item' }]}
       />
 
       {error && <ErrorAlert message={error} />}
@@ -328,7 +355,7 @@ export default function NewInventoryItemPage() {
                 <Select id="preferredSupplier" className="pl-9" value={preferredSupplier} onChange={(e) => setPreferredSupplier(e.target.value)}>
                   <option value="">Select supplier</option>
                   {(suppliers ?? [])
-                    .filter((s) => s.isActive)
+                    .filter((s) => s.isActive || s.name === preferredSupplier)
                     .map((s) => (
                       <option key={s.id} value={s.name}>
                         {s.name}
@@ -365,7 +392,7 @@ export default function NewInventoryItemPage() {
               </Button>
               <Button type="submit" disabled={submitting}>
                 <SaveIcon className="h-4 w-4" />
-                {submitting ? 'Saving…' : 'Create Item'}
+                {submitting ? 'Saving…' : duplicateSource ? 'Create Duplicate' : 'Create Item'}
               </Button>
             </div>
           </CardBody>

@@ -27,6 +27,7 @@ import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  CopyIcon,
   DownloadIcon,
   FileClockIcon,
   FileTextIcon,
@@ -169,6 +170,12 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
                 <Button variant="secondary" size="sm">
                   <PencilIcon className="h-4 w-4" />
                   Edit Asset
+                </Button>
+              </Link>
+              <Link href={`/assets/new?duplicateFrom=${asset.id}`}>
+                <Button variant="secondary" size="sm">
+                  <CopyIcon className="h-4 w-4" />
+                  Duplicate
                 </Button>
               </Link>
               {!asset.currentCustodianId && (

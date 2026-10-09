@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { api, ApiError } from '@/lib/api-client';
 import type { InventoryItem, IssuanceRecord, Paginated, StockBalance, UnitOfMeasure } from '@/lib/types';
@@ -14,6 +15,7 @@ import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
 import { RequirePermission } from '@/components/require-permission';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { CopyIcon } from '@/components/icons/form-icons';
 
 export default function InventoryItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -35,7 +37,20 @@ export default function InventoryItemDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div>
-      <PageHeader title={item.name} description={`Item code: ${item.itemCode}`} />
+      <PageHeader
+        title={item.name}
+        description={`Item code: ${item.itemCode}`}
+        action={
+          <RequirePermission permission="inventoryItems.manage">
+            <Link href={`/inventory/new?duplicateFrom=${item.id}`}>
+              <Button variant="secondary" size="sm">
+                <CopyIcon className="h-4 w-4" />
+                Duplicate
+              </Button>
+            </Link>
+          </RequirePermission>
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>

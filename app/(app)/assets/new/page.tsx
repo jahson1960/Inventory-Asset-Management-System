@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, type FormEvent } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useApi } from '@/hooks/use-api';
 import { useAuth } from '@/contexts/auth-context';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -22,6 +22,7 @@ import { Card, CardBody } from '@/components/ui/card';
 import { Field, Input, Label, Select, Textarea } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/ui/alert';
+import { PageLoading } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { QuickCreateCategoryModal } from '@/components/quick-create-category-modal';
 import { QuickCreateLocationModal } from '@/components/quick-create-location-modal';
@@ -52,7 +53,37 @@ import {
 const TRACKING_TYPES: AssetTrackingType[] = ['FIXED_ASSET', 'CONTROLLED_EQUIPMENT'];
 const CONDITIONS: AssetCondition[] = ['NEW', 'GOOD', 'FAIR', 'POOR', 'DAMAGED'];
 
+/** Prisma returns full ISO timestamps (e.g. 2026-01-15T00:00:00.000Z); <input type="date"> needs
+ *  just the date portion or it won't show the existing value. */
+function toDateInput(value: string | null | undefined): string {
+  return value ? value.slice(0, 10) : '';
+}
+
 export default function NewAssetPage() {
+  return (
+    <Suspense>
+      <NewAssetPageContent />
+    </Suspense>
+  );
+}
+
+function NewAssetPageContent() {
+  const searchParams = useSearchParams();
+  const duplicateFromId = searchParams.get('duplicateFrom');
+  // Gate on the source asset loading (rather than defaulting state to '' and patching it in via
+  // an effect once data arrives) so the form only ever mounts once, with the right initial
+  // values already in hand — same reasoning as EditAssetForm: a useState initializer only runs
+  // on first mount, it won't pick up data that arrives after the fact.
+  const { data: duplicateSource, loading: duplicateLoading } = useApi<Asset>(
+    duplicateFromId ? `/assets/${duplicateFromId}` : null,
+  );
+
+  if (duplicateFromId && duplicateLoading) return <PageLoading />;
+
+  return <NewAssetForm duplicateSource={duplicateFromId ? (duplicateSource ?? null) : null} />;
+}
+
+function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
   const router = useRouter();
   const { user } = useAuth();
   const { can } = usePermissions();
@@ -75,32 +106,34 @@ export default function NewAssetPage() {
   const canQuickCreateSupplier = inlineCreateEnabled && can('suppliers.manage');
   const [quickCreateOpen, setQuickCreateOpen] = useState<'category' | 'location' | 'supplier' | null>(null);
 
+  // Asset tag, serial number and notes are never copied — a tag/serial must be unique per
+  // physical unit, and notes tend to hold unit-specific history that wouldn't apply to a new one.
   const [assetTag, setAssetTag] = useState('');
-  const [trackingType, setTrackingType] = useState<AssetTrackingType>('FIXED_ASSET');
-  const [categoryId, setCategoryId] = useState('');
-  const [name, setName] = useState('');
-  const [brand, setBrand] = useState('');
-  const [model, setModel] = useState('');
-  const [description, setDescription] = useState('');
+  const [trackingType, setTrackingType] = useState<AssetTrackingType>(duplicateSource?.trackingType ?? 'FIXED_ASSET');
+  const [categoryId, setCategoryId] = useState(duplicateSource?.categoryId ?? '');
+  const [name, setName] = useState(duplicateSource?.name ?? '');
+  const [brand, setBrand] = useState(duplicateSource?.brand ?? '');
+  const [model, setModel] = useState(duplicateSource?.model ?? '');
+  const [description, setDescription] = useState(duplicateSource?.description ?? '');
   const [serialNumber, setSerialNumber] = useState('');
-  const [purchaseDate, setPurchaseDate] = useState('');
-  const [purchaseCost, setPurchaseCost] = useState('');
-  const [supplier, setSupplier] = useState('');
-  const [warrantyStartDate, setWarrantyStartDate] = useState('');
-  const [warrantyEndDate, setWarrantyEndDate] = useState('');
-  const [warrantyProvider, setWarrantyProvider] = useState('');
-  const [condition, setCondition] = useState<AssetCondition>('NEW');
-  const [branchId, setBranchId] = useState('');
-  const [currentLocationId, setCurrentLocationId] = useState('');
+  const [purchaseDate, setPurchaseDate] = useState(toDateInput(duplicateSource?.purchaseDate));
+  const [purchaseCost, setPurchaseCost] = useState(duplicateSource?.purchaseCost ?? '');
+  const [supplier, setSupplier] = useState(duplicateSource?.supplier ?? '');
+  const [warrantyStartDate, setWarrantyStartDate] = useState(toDateInput(duplicateSource?.warrantyStartDate));
+  const [warrantyEndDate, setWarrantyEndDate] = useState(toDateInput(duplicateSource?.warrantyEndDate));
+  const [warrantyProvider, setWarrantyProvider] = useState(duplicateSource?.warrantyProvider ?? '');
+  const [condition, setCondition] = useState<AssetCondition>(duplicateSource?.condition ?? 'NEW');
+  const [branchId, setBranchId] = useState(duplicateSource?.branchId ?? '');
+  const [currentLocationId, setCurrentLocationId] = useState(duplicateSource?.currentLocationId ?? '');
   // The asset's branch is derived server-side from its location (there's no separate branchId
   // field to submit) — this just narrows the location list to the chosen branch, since the
   // asset's branch is what the "assign to staff" picker later filters staff by, and picking a
   // location in the wrong branch silently misaligned the two.
   const locationsInBranch = (locations ?? []).filter((l) => !branchId || l.branchId === branchId);
-  const [usefulLifeMonths, setUsefulLifeMonths] = useState('');
-  const [salvageValue, setSalvageValue] = useState('');
-  const [depreciationMethod, setDepreciationMethod] = useState<'' | DepreciationMethod>('');
-  const [depreciationRate, setDepreciationRate] = useState('');
+  const [usefulLifeMonths, setUsefulLifeMonths] = useState(duplicateSource?.usefulLifeMonths?.toString() ?? '');
+  const [salvageValue, setSalvageValue] = useState(duplicateSource?.salvageValue ?? '');
+  const [depreciationMethod, setDepreciationMethod] = useState<'' | DepreciationMethod>(duplicateSource?.depreciationMethod ?? '');
+  const [depreciationRate, setDepreciationRate] = useState(duplicateSource?.depreciationRate ?? '');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -148,9 +181,13 @@ export default function NewAssetPage() {
     <div className="max-w-4xl">
       <FormPageHeader
         icon={<MonitorIcon className="h-7 w-7" />}
-        title="Register New Asset"
-        description="Register a fixed asset or controlled equipment item."
-        breadcrumb={[{ label: 'Assets', href: '/assets' }, { label: 'New Asset' }]}
+        title={duplicateSource ? 'Duplicate Asset' : 'Register New Asset'}
+        description={
+          duplicateSource
+            ? `Copied from ${duplicateSource.assetTag}. Set a new asset tag and serial number, adjust anything else, then save.`
+            : 'Register a fixed asset or controlled equipment item.'
+        }
+        breadcrumb={[{ label: 'Assets', href: '/assets' }, { label: duplicateSource ? 'Duplicate Asset' : 'New Asset' }]}
       />
 
       {error && <ErrorAlert message={error} />}
@@ -411,7 +448,7 @@ export default function NewAssetPage() {
                 <Select id="supplier" className="pl-9" value={supplier} onChange={(e) => setSupplier(e.target.value)}>
                   <option value="">Select supplier</option>
                   {(suppliers ?? [])
-                    .filter((s) => s.isActive)
+                    .filter((s) => s.isActive || s.name === supplier)
                     .map((s) => (
                       <option key={s.id} value={s.name}>
                         {s.name}
@@ -580,7 +617,7 @@ export default function NewAssetPage() {
               </Button>
               <Button type="submit" disabled={submitting}>
                 <SaveIcon className="h-4 w-4" />
-                {submitting ? 'Saving…' : 'Create Asset'}
+                {submitting ? 'Saving…' : duplicateSource ? 'Create Duplicate' : 'Create Asset'}
               </Button>
             </div>
           </CardBody>
