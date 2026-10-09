@@ -306,7 +306,6 @@ export interface Branch {
 
 export interface Department {
   id: string;
-  branchId: string;
   name: string;
   code: string;
   isActive: boolean;

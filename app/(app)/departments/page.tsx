@@ -1,17 +1,17 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import { api, ApiError } from '@/lib/api-client';
-import type { Branch, Department, DisplaySettingsRecord, Paginated } from '@/lib/types';
+import type { Department, DisplaySettingsRecord } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
-import { Field, Input, Label, Select } from '@/components/ui/input';
+import { Field, Input, Label } from '@/components/ui/input';
 import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
 import { RequirePermission } from '@/components/require-permission';
@@ -22,18 +22,14 @@ export default function DepartmentsPage() {
   const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
   const pageSize = displaySettings?.pageSize ?? 25;
   const { items: departments, total, page, setPage, totalPages, loading, error, refetch } = usePaginatedApi<Department>('/departments', pageSize);
-  const { data: branchesPage } = useApi<Paginated<Branch>>('/branches', { pageSize: 1000 });
-  const branches = branchesPage?.items;
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Department | null>(null);
-
-  const branchNameById = new Map((branches ?? []).map((b) => [b.id, b.name]));
 
   return (
     <div>
       <PageHeader
         title="Departments"
-        description="Departments within each branch."
+        description="Organization-wide departments, shared across every branch."
         action={
           <RequirePermission permission="departments.manage">
             <Button
@@ -63,7 +59,6 @@ export default function DepartmentsPage() {
               <Tr>
                 <Th>Name</Th>
                 <Th>Code</Th>
-                <Th>Branch</Th>
                 <Th>Status</Th>
                 <Th />
               </Tr>
@@ -73,7 +68,6 @@ export default function DepartmentsPage() {
                 <Tr key={dept.id}>
                   <Td className="font-medium text-slate-900">{dept.name}</Td>
                   <Td>{dept.code}</Td>
-                  <Td>{branchNameById.get(dept.branchId) ?? '—'}</Td>
                   <Td>
                     <Badge tone={dept.isActive ? 'green' : 'neutral'}>{dept.isActive ? 'Active' : 'Inactive'}</Badge>
                   </Td>
@@ -102,7 +96,6 @@ export default function DepartmentsPage() {
         key={editing?.id ?? 'new'}
         open={modalOpen}
         department={editing}
-        branches={branches ?? []}
         onClose={() => setModalOpen(false)}
         onSaved={() => {
           setModalOpen(false);
@@ -116,32 +109,19 @@ export default function DepartmentsPage() {
 function DepartmentFormModal({
   open,
   department,
-  branches,
   onClose,
   onSaved,
 }: {
   open: boolean;
   department: Department | null;
-  branches: Branch[];
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [branchId, setBranchId] = useState(department?.branchId ?? branches[0]?.id ?? '');
   const [name, setName] = useState(department?.name ?? '');
   const [code, setCode] = useState(department?.code ?? '');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const confirm = useConfirm();
-
-  // This modal is mounted before the branch list finishes loading (it's rendered unconditionally
-  // on the page, not just when open), so the branchId state above can initialize to '' and never
-  // get corrected — useState's initializer only runs once, it doesn't re-run when `branches`
-  // arrives. Fill it in once branches load, if nothing's been picked yet.
-  useEffect(() => {
-    if (!department && !branchId && branches.length > 0) {
-      setBranchId(branches[0].id);
-    }
-  }, [department, branchId, branches]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -151,9 +131,9 @@ function DepartmentFormModal({
     setError(null);
     try {
       if (department) {
-        await api.patch(`/departments/${department.id}`, { branchId, name, code });
+        await api.patch(`/departments/${department.id}`, { name, code });
       } else {
-        await api.post('/departments', { branchId, name, code });
+        await api.post('/departments', { name, code });
       }
       onSaved();
     } catch (err) {
@@ -167,16 +147,6 @@ function DepartmentFormModal({
     <Modal open={open} onClose={onClose} title={department ? 'Edit Department' : 'New Department'}>
       {error && <ErrorAlert message={error} />}
       <form onSubmit={onSubmit}>
-        <Field>
-          <Label htmlFor="branch" required>Branch</Label>
-          <Select id="branch" required value={branchId} onChange={(e) => setBranchId(e.target.value)}>
-            {branches.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
         <Field>
           <Label htmlFor="name" required>Name</Label>
           <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />

@@ -348,7 +348,6 @@ function UserFormModal({
   const [submitting, setSubmitting] = useState(false);
   const confirm = useConfirm();
 
-  const deptOptions = departments.filter((d) => d.branchId === branchId);
   const locationOptions = locations.filter((l) => l.branchId === branchId);
   // On create, branch/department/location are mandatory for every role, no exceptions. On edit,
   // the pre-existing, narrower rule still applies (required only for STAFF) so an admin can keep
@@ -456,7 +455,6 @@ function UserFormModal({
             value={branchId}
             onChange={(e) => {
               setBranchId(e.target.value);
-              setDepartmentId('');
               setLocationId('');
             }}
           >
@@ -468,21 +466,19 @@ function UserFormModal({
             ))}
           </Select>
         </Field>
-        {branchId && (
-          <Field>
-            <Label htmlFor="department" required={departmentRequired}>
-              Department
-            </Label>
-            <Select id="department" required={departmentRequired} value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
-              <option value="">{departmentRequired ? 'Select department' : 'No specific department'}</option>
-              {deptOptions.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        )}
+        <Field>
+          <Label htmlFor="department" required={departmentRequired}>
+            Department
+          </Label>
+          <Select id="department" required={departmentRequired} value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
+            <option value="">{departmentRequired ? 'Select department' : 'No specific department'}</option>
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
         {branchId && (
           <Field>
             <Label htmlFor="location" required={locationRequired}>
