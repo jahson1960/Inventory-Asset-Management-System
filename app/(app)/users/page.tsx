@@ -4,7 +4,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import { api, ApiError, fileUrl, uploadFile } from '@/lib/api-client';
-import type { Branch, CurrentUser, Department, DisplaySettingsRecord, Paginated, Role } from '@/lib/types';
+import type { Branch, CurrentUser, Department, DisplaySettingsRecord, LocationNode, Paginated, Role } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
@@ -32,6 +32,8 @@ export default function UsersPage() {
   const branches = branchesPage?.items;
   const { data: departmentsPage } = useApi<Paginated<Department>>('/departments', { pageSize: 1000 });
   const departments = departmentsPage?.items;
+  const { data: locationsPage } = useApi<Paginated<LocationNode>>('/locations', { pageSize: 1000 });
+  const locations = locationsPage?.items;
   const [modalOpen, setModalOpen] = useState(false);
   const [signatureUser, setSignatureUser] = useState<UserRow | null>(null);
   const [revealedPassword, setRevealedPassword] = useState<{ email: string; password: string } | null>(null);
@@ -171,6 +173,7 @@ export default function UsersPage() {
         open={modalOpen}
         branches={branches ?? []}
         departments={departments ?? []}
+        locations={locations ?? []}
         onClose={() => setModalOpen(false)}
         onSaved={(result) => {
           setModalOpen(false);
@@ -305,12 +308,14 @@ function UserFormModal({
   open,
   branches,
   departments,
+  locations,
   onClose,
   onSaved,
 }: {
   open: boolean;
   branches: Branch[];
   departments: Department[];
+  locations: LocationNode[];
   onClose: () => void;
   onSaved: (result: CreateUserResult) => void;
 }) {
@@ -320,6 +325,7 @@ function UserFormModal({
   const [role, setRole] = useState<Role>('STAFF');
   const [branchId, setBranchId] = useState('');
   const [departmentId, setDepartmentId] = useState('');
+  const [locationId, setLocationId] = useState('');
   const [staffNumber, setStaffNumber] = useState('');
   const [phone, setPhone] = useState('');
   const [jobTitle, setJobTitle] = useState('');
@@ -328,6 +334,8 @@ function UserFormModal({
   const confirm = useConfirm();
 
   const deptOptions = departments.filter((d) => d.branchId === branchId);
+  const locationOptions = locations.filter((l) => l.branchId === branchId);
+  const locationRequired = role === 'STAFF';
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -346,6 +354,7 @@ function UserFormModal({
         role,
         branchId: branchId || undefined,
         departmentId: departmentId || undefined,
+        locationId: locationId || undefined,
         staffNumber: staffNumber || undefined,
         phone: phone || undefined,
         jobTitle: jobTitle || undefined,
@@ -387,16 +396,20 @@ function UserFormModal({
           </Select>
         </Field>
         <Field>
-          <Label htmlFor="branch">Branch (leave blank for organization-wide access)</Label>
+          <Label htmlFor="branch" required={locationRequired}>
+            Branch{locationRequired ? '' : ' (leave blank for organization-wide access)'}
+          </Label>
           <Select
             id="branch"
+            required={locationRequired}
             value={branchId}
             onChange={(e) => {
               setBranchId(e.target.value);
               setDepartmentId('');
+              setLocationId('');
             }}
           >
-            <option value="">All branches</option>
+            <option value="">{locationRequired ? 'Select branch' : 'All branches'}</option>
             {branches.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
@@ -415,6 +428,26 @@ function UserFormModal({
                 </option>
               ))}
             </Select>
+          </Field>
+        )}
+        {branchId && (
+          <Field>
+            <Label htmlFor="location" required={locationRequired}>
+              Location{locationRequired ? '' : ' (where this person is based)'}
+            </Label>
+            <Select id="location" required={locationRequired} value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+              <option value="">{locationRequired ? 'Select location' : 'No specific location'}</option>
+              {locationOptions.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </Select>
+            {locationRequired && (
+              <p className="mt-1 text-xs text-slate-400">
+                Required for staff — assets assigned to them will move to this location.
+              </p>
+            )}
           </Field>
         )}
         <div className="grid grid-cols-2 gap-3">

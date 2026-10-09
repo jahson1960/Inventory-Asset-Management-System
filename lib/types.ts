@@ -285,12 +285,14 @@ export interface CurrentUser {
   role: Role;
   branchId: string | null;
   departmentId: string | null;
+  locationId: string | null;
   staffNumber: string | null;
   phone: string | null;
   jobTitle: string | null;
   mustChangePassword: boolean;
   branch?: Branch;
   department?: Department;
+  location?: LocationNode;
 }
 
 export interface Branch {
