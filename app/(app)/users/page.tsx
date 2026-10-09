@@ -350,7 +350,13 @@ function UserFormModal({
 
   const deptOptions = departments.filter((d) => d.branchId === branchId);
   const locationOptions = locations.filter((l) => l.branchId === branchId);
-  const locationRequired = role === 'STAFF';
+  // On create, branch/department/location are mandatory for every role, no exceptions. On edit,
+  // the pre-existing, narrower rule still applies (required only for STAFF) so an admin can keep
+  // editing a legacy account that predates this rule without being forced to backfill it.
+  const isCreate = !user;
+  const branchRequired = isCreate || role === 'STAFF';
+  const departmentRequired = isCreate;
+  const locationRequired = isCreate || role === 'STAFF';
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -441,12 +447,12 @@ function UserFormModal({
           </Select>
         </Field>
         <Field>
-          <Label htmlFor="branch" required={locationRequired}>
-            Branch{locationRequired ? '' : ' (leave blank for organization-wide access)'}
+          <Label htmlFor="branch" required={branchRequired}>
+            Branch{branchRequired ? '' : ' (leave blank for organization-wide access)'}
           </Label>
           <Select
             id="branch"
-            required={locationRequired}
+            required={branchRequired}
             value={branchId}
             onChange={(e) => {
               setBranchId(e.target.value);
@@ -454,7 +460,7 @@ function UserFormModal({
               setLocationId('');
             }}
           >
-            <option value="">{locationRequired ? 'Select branch' : 'All branches'}</option>
+            <option value="">{branchRequired ? 'Select branch' : 'All branches'}</option>
             {branches.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
@@ -464,9 +470,11 @@ function UserFormModal({
         </Field>
         {branchId && (
           <Field>
-            <Label htmlFor="department">Department (e.g. required for HOD)</Label>
-            <Select id="department" value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
-              <option value="">No specific department</option>
+            <Label htmlFor="department" required={departmentRequired}>
+              Department
+            </Label>
+            <Select id="department" required={departmentRequired} value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
+              <option value="">{departmentRequired ? 'Select department' : 'No specific department'}</option>
               {deptOptions.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
@@ -488,11 +496,7 @@ function UserFormModal({
                 </option>
               ))}
             </Select>
-            {locationRequired && (
-              <p className="mt-1 text-xs text-slate-400">
-                Required for staff — assets assigned to them will move to this location.
-              </p>
-            )}
+            <p className="mt-1 text-xs text-slate-400">Assets assigned to this person will move to this location.</p>
           </Field>
         )}
         <div className="grid grid-cols-2 gap-3">
