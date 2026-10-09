@@ -151,7 +151,7 @@ function DepartmentFormModal({
     setError(null);
     try {
       if (department) {
-        await api.patch(`/departments/${department.id}`, { name, code });
+        await api.patch(`/departments/${department.id}`, { branchId, name, code });
       } else {
         await api.post('/departments', { branchId, name, code });
       }
@@ -167,18 +167,16 @@ function DepartmentFormModal({
     <Modal open={open} onClose={onClose} title={department ? 'Edit Department' : 'New Department'}>
       {error && <ErrorAlert message={error} />}
       <form onSubmit={onSubmit}>
-        {!department && (
-          <Field>
-            <Label htmlFor="branch" required>Branch</Label>
-            <Select id="branch" required value={branchId} onChange={(e) => setBranchId(e.target.value)}>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        )}
+        <Field>
+          <Label htmlFor="branch" required>Branch</Label>
+          <Select id="branch" required value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
         <Field>
           <Label htmlFor="name" required>Name</Label>
           <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
