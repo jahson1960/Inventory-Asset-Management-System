@@ -35,6 +35,7 @@ export default function UsersPage() {
   const { data: locationsPage } = useApi<Paginated<LocationNode>>('/locations', { pageSize: 1000 });
   const locations = locationsPage?.items;
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserRow | null>(null);
   const [signatureUser, setSignatureUser] = useState<UserRow | null>(null);
   const [revealedPassword, setRevealedPassword] = useState<{ email: string; password: string } | null>(null);
 
@@ -139,6 +140,12 @@ export default function UsersPage() {
                   <Td>
                     <div className="flex items-center gap-3">
                       <button
+                        onClick={() => setEditingUser(u)}
+                        className="text-xs font-medium text-slate-600 hover:text-slate-900"
+                      >
+                        Edit
+                      </button>
+                      <button
                         onClick={() => resetPassword(u)}
                         className="text-xs font-medium text-slate-600 hover:text-slate-900"
                       >
@@ -170,14 +177,20 @@ export default function UsersPage() {
       <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
 
       <UserFormModal
-        open={modalOpen}
+        key={editingUser?.id ?? 'new'}
+        open={modalOpen || Boolean(editingUser)}
+        user={editingUser}
         branches={branches ?? []}
         departments={departments ?? []}
         locations={locations ?? []}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingUser(null);
+        }}
         onSaved={(result) => {
           setModalOpen(false);
-          if (!result.emailSent && result.temporaryPassword) {
+          setEditingUser(null);
+          if (result && !result.emailSent && result.temporaryPassword) {
             setRevealedPassword({ email: result.email, password: result.temporaryPassword });
           }
           refetch();
@@ -306,6 +319,7 @@ function RevealedPasswordModal({
 
 function UserFormModal({
   open,
+  user,
   branches,
   departments,
   locations,
@@ -313,22 +327,23 @@ function UserFormModal({
   onSaved,
 }: {
   open: boolean;
+  user: UserRow | null;
   branches: Branch[];
   departments: Department[];
   locations: LocationNode[];
   onClose: () => void;
-  onSaved: (result: CreateUserResult) => void;
+  onSaved: (result?: CreateUserResult) => void;
 }) {
-  const [email, setEmail] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [role, setRole] = useState<Role>('STAFF');
-  const [branchId, setBranchId] = useState('');
-  const [departmentId, setDepartmentId] = useState('');
-  const [locationId, setLocationId] = useState('');
-  const [staffNumber, setStaffNumber] = useState('');
-  const [phone, setPhone] = useState('');
-  const [jobTitle, setJobTitle] = useState('');
+  const [email, setEmail] = useState(user?.email ?? '');
+  const [firstName, setFirstName] = useState(user?.firstName ?? '');
+  const [lastName, setLastName] = useState(user?.lastName ?? '');
+  const [role, setRole] = useState<Role>(user?.role ?? 'STAFF');
+  const [branchId, setBranchId] = useState(user?.branchId ?? '');
+  const [departmentId, setDepartmentId] = useState(user?.departmentId ?? '');
+  const [locationId, setLocationId] = useState(user?.locationId ?? '');
+  const [staffNumber, setStaffNumber] = useState(user?.staffNumber ?? '');
+  const [phone, setPhone] = useState(user?.phone ?? '');
+  const [jobTitle, setJobTitle] = useState(user?.jobTitle ?? '');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const confirm = useConfirm();
@@ -339,36 +354,58 @@ function UserFormModal({
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    const ok = await confirm({
-      title: 'Create this user?',
-      message: 'A random temporary password will be emailed to them; they must change it on first login.',
-    });
+    const ok = await confirm(
+      user
+        ? { title: 'Save changes to this user?' }
+        : {
+            title: 'Create this user?',
+            message: 'A random temporary password will be emailed to them; they must change it on first login.',
+          },
+    );
     if (!ok) return;
     setSubmitting(true);
     setError(null);
     try {
-      const result = await api.post<CreateUserResult>('/users', {
-        email,
-        firstName,
-        lastName,
-        role,
-        branchId: branchId || undefined,
-        departmentId: departmentId || undefined,
-        locationId: locationId || undefined,
-        staffNumber: staffNumber || undefined,
-        phone: phone || undefined,
-        jobTitle: jobTitle || undefined,
-      });
-      onSaved(result);
+      if (user) {
+        // Unlike create (where a blank field just means "don't set it"), an edit can be clearing
+        // a value that was previously set — sending undefined would omit the key entirely and
+        // leave the old value untouched, so these use null instead to actually clear them.
+        await api.patch(`/users/${user.id}`, {
+          firstName,
+          lastName,
+          role,
+          branchId: branchId || null,
+          departmentId: departmentId || null,
+          locationId: locationId || null,
+          staffNumber: staffNumber || null,
+          phone: phone || null,
+          jobTitle: jobTitle || null,
+        });
+        onSaved();
+      } else {
+        const result = await api.post<CreateUserResult>('/users', {
+          email,
+          firstName,
+          lastName,
+          role,
+          branchId: branchId || undefined,
+          departmentId: departmentId || undefined,
+          locationId: locationId || undefined,
+          staffNumber: staffNumber || undefined,
+          phone: phone || undefined,
+          jobTitle: jobTitle || undefined,
+        });
+        onSaved(result);
+      }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to create user');
+      setError(err instanceof ApiError ? err.message : `Failed to ${user ? 'save' : 'create'} user`);
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="New User">
+    <Modal open={open} onClose={onClose} title={user ? 'Edit User' : 'New User'}>
       {error && <ErrorAlert message={error} />}
       <form onSubmit={onSubmit}>
         <div className="grid grid-cols-2 gap-3">
@@ -383,7 +420,15 @@ function UserFormModal({
         </div>
         <Field>
           <Label htmlFor="email" required>Email</Label>
-          <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input
+            id="email"
+            type="email"
+            required
+            disabled={Boolean(user)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          {user && <p className="mt-1 text-xs text-slate-400">Email can&apos;t be changed after the account is created.</p>}
         </Field>
         <Field>
           <Label htmlFor="role" required>Role</Label>
@@ -469,7 +514,7 @@ function UserFormModal({
             Cancel
           </Button>
           <Button type="submit" disabled={submitting}>
-            {submitting ? 'Creating…' : 'Create'}
+            {submitting ? 'Saving…' : user ? 'Save' : 'Create'}
           </Button>
         </div>
       </form>
