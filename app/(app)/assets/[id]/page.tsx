@@ -196,7 +196,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
               <StatusPill status={asset.status} disabled={statusSubmitting} onChange={onStatusChange} />
             </RequirePermission>
             <RequirePermission permission="assets.manage">
-              <Link href="/assets/new" className="ml-auto">
+              <Link href="/assets/new" className="ml-auto border-l border-slate-200 pl-3">
                 <Button size="sm">New Asset</Button>
               </Link>
             </RequirePermission>
