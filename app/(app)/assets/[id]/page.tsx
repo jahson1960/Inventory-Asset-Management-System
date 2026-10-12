@@ -166,6 +166,9 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
               </RequirePermission>
             )}
             <RequirePermission permission="assets.manage">
+              <Link href="/assets/new">
+                <Button size="sm">New Asset</Button>
+              </Link>
               <Link href={`/assets/${asset.id}/edit`}>
                 <Button variant="secondary" size="sm">
                   <PencilIcon className="h-4 w-4" />
