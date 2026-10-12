@@ -166,9 +166,6 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
               </RequirePermission>
             )}
             <RequirePermission permission="assets.manage">
-              <Link href="/assets/new">
-                <Button size="sm">New Asset</Button>
-              </Link>
               <Link href={`/assets/${asset.id}/edit`}>
                 <Button variant="secondary" size="sm">
                   <PencilIcon className="h-4 w-4" />
@@ -197,6 +194,11 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
                 </Button>
               </Link>
               <StatusPill status={asset.status} disabled={statusSubmitting} onChange={onStatusChange} />
+            </RequirePermission>
+            <RequirePermission permission="assets.manage">
+              <Link href="/assets/new" className="ml-auto">
+                <Button size="sm">New Asset</Button>
+              </Link>
             </RequirePermission>
           </div>
         </CardBody>
