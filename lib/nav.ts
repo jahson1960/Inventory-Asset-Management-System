@@ -104,6 +104,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Email Templates', href: '/settings/email-templates', permission: 'nav.settingsEmailTemplates' },
       { label: 'Depreciation', href: '/settings/depreciation', permission: 'nav.settingsDepreciation' },
       { label: 'Display', href: '/settings/display', permission: 'nav.settingsDisplay' },
+      { label: 'Label Printing', href: '/settings/label-print', permission: 'nav.settingsLabelPrinting' },
       { label: 'Roles & Permissions', href: '/settings/permissions', roles: ['SUPER_ADMIN'] },
     ],
   },

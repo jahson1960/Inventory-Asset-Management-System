@@ -213,6 +213,16 @@ export interface DepreciationResult {
   netBookValue: string;
 }
 
+export type LabelOrientation = 'PORTRAIT' | 'LANDSCAPE';
+
+export interface LabelPrintSettingsRecord {
+  widthIn: string;
+  heightIn: string;
+  orientation: LabelOrientation;
+  fontFamily: string;
+  fontSizePt: number;
+}
+
 export interface AssetValuationItem {
   assetId: string;
   assetTag: string;

@@ -42,7 +42,7 @@ const ACTION_KEYS: { key: string; label: string }[] = [
   { key: 'auditLog.view', label: 'View audit log' },
   { key: 'workflowSteps.edit', label: 'Edit approval workflow steps' },
   { key: 'settings.smtp', label: 'Manage email (SMTP) settings' },
-  { key: 'settings.write', label: 'Manage other settings (depreciation/display/theme)' },
+  { key: 'settings.write', label: 'Manage other settings (depreciation/display/theme/label printing)' },
 ];
 
 const NAV_KEYS: { key: string; label: string }[] = [
@@ -91,6 +91,7 @@ const NAV_KEYS: { key: string; label: string }[] = [
   { key: 'nav.settingsEmailTemplates', label: 'Settings → Email Templates' },
   { key: 'nav.settingsDepreciation', label: 'Settings → Depreciation' },
   { key: 'nav.settingsDisplay', label: 'Settings → Display' },
+  { key: 'nav.settingsLabelPrinting', label: 'Settings → Label Printing' },
 ];
 
 export default function PermissionsSettingsPage() {

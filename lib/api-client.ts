@@ -121,3 +121,24 @@ export async function fetchAuthenticatedObjectUrl(path: string): Promise<string>
   const blob = await response.blob();
   return URL.createObjectURL(blob);
 }
+
+/** Same as fetchAuthenticatedObjectUrl, but returns a base64 data: URL instead of a blob: URL —
+ *  needed when the image has to be embedded in a document outside this one (e.g. a print window
+ *  opened via window.open), since a blob: URL only resolves within the document that created it. */
+export async function fetchAuthenticatedDataUrl(path: string): Promise<string> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const response = await fetch(buildUrl(path), { headers });
+  if (!response.ok) {
+    throw new ApiError(response.status, 'Failed to load file');
+  }
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}

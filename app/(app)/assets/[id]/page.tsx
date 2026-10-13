@@ -3,8 +3,8 @@
 import { use, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
-import { api, ApiError, fetchAuthenticatedObjectUrl, fileUrl, uploadFile } from '@/lib/api-client';
-import type { Asset, AssetAssignment, AssetStatus, CurrentUser, DisplaySettingsRecord, MaintenanceRequestRecord, Paginated, Technician } from '@/lib/types';
+import { api, ApiError, fetchAuthenticatedDataUrl, fetchAuthenticatedObjectUrl, fileUrl, uploadFile } from '@/lib/api-client';
+import type { Asset, AssetAssignment, AssetStatus, CurrentUser, DisplaySettingsRecord, LabelPrintSettingsRecord, MaintenanceRequestRecord, Paginated, Technician } from '@/lib/types';
 import { statusTone, type BadgeTone } from '@/lib/status-tone';
 import { cn } from '@/lib/cn';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
@@ -68,6 +68,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
   const { data: assignments, refetch: refetchAssignments } = useApi<AssetAssignment[]>(`/assets/${id}/assignments`);
   const { data: maintenanceHistory, refetch: refetchMaintenance } = useApi<MaintenanceRequestRecord[]>(`/maintenance-requests/by-asset/${id}`);
   const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
+  const { data: labelSettings } = useApi<LabelPrintSettingsRecord>('/settings/label-print');
   const [assignOpen, setAssignOpen] = useState(false);
   const [sendToTechOpen, setSendToTechOpen] = useState(false);
   const [statusSubmitting, setStatusSubmitting] = useState(false);
@@ -370,6 +371,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
           assetName={asset.name}
           serialNumber={asset.serialNumber}
           qrCodeEnabled={displaySettings?.qrCodeEnabled ?? false}
+          labelSettings={labelSettings}
         />
         <DepreciationCard asset={asset} />
       </div>
@@ -524,20 +526,35 @@ function AttachmentsDropzone({ onFile }: { onFile: (file: File) => void }) {
   );
 }
 
+const DEFAULT_LABEL_SETTINGS: LabelPrintSettingsRecord = {
+  widthIn: '2',
+  heightIn: '1',
+  orientation: 'PORTRAIT',
+  fontFamily: 'Arial, Helvetica, sans-serif',
+  fontSizePt: 10,
+};
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
+}
+
 function QrLabelCard({
   assetId,
   assetTag,
   assetName,
   serialNumber,
   qrCodeEnabled,
+  labelSettings,
 }: {
   assetId: string;
   assetTag: string;
   assetName: string;
   serialNumber: string | null;
   qrCodeEnabled: boolean;
+  labelSettings?: LabelPrintSettingsRecord;
 }) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [printing, setPrinting] = useState(false);
 
   useEffect(() => {
     if (!qrCodeEnabled) return;
@@ -564,6 +581,87 @@ function QrLabelCard({
     };
   }, [assetId, qrCodeEnabled]);
 
+  async function onPrint() {
+    setPrinting(true);
+    try {
+      const settings = labelSettings ?? DEFAULT_LABEL_SETTINGS;
+      const width = Number(settings.widthIn) || 2;
+      const height = Number(settings.heightIn) || 1;
+      const rotated = settings.orientation === 'LANDSCAPE';
+      // Rotated content needs its pre-rotation box swapped (W<->H) so the rotated bounding box
+      // ends up matching the physical page size instead of overflowing/underflowing it.
+      const boxWidthIn = rotated ? height : width;
+      const boxHeightIn = rotated ? width : height;
+      const qrSizeIn = Math.max(Math.min(boxWidthIn, boxHeightIn) * 0.7, 0.3);
+
+      let qrImgTag = '';
+      if (qrCodeEnabled) {
+        try {
+          const dataUrl = await fetchAuthenticatedDataUrl(`/assets/${assetId}/qr-code`);
+          qrImgTag = `<img src="${dataUrl}" class="qr" alt="QR" />`;
+        } catch {
+          // Print the text portion of the label even if the QR image failed to load.
+        }
+      }
+
+      const win = window.open('', '_blank', 'width=400,height=300');
+      if (!win) return;
+      win.document.write(`<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>${escapeHtml(assetTag)} label</title>
+<style>
+  @page { size: ${width}in ${height}in; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: ${width}in;
+    height: ${height}in;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .label {
+    width: ${boxWidthIn}in;
+    height: ${boxHeightIn}in;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.08in;
+    padding: 0.06in;
+    font-family: ${settings.fontFamily};
+    font-size: ${settings.fontSizePt}pt;
+    ${rotated ? 'transform: rotate(90deg);' : ''}
+  }
+  .qr { width: ${qrSizeIn}in; height: ${qrSizeIn}in; flex-shrink: 0; }
+  .text { min-width: 0; line-height: 1.2; overflow: hidden; }
+  .tag { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .name, .serial { font-size: 0.82em; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+  <div class="label">
+    ${qrImgTag}
+    <div class="text">
+      <div class="tag">${escapeHtml(assetTag)}</div>
+      <div class="name">${escapeHtml(assetName)}</div>
+      ${serialNumber ? `<div class="serial">S/N: ${escapeHtml(serialNumber)}</div>` : ''}
+    </div>
+  </div>
+</body>
+</html>`);
+      win.document.close();
+      win.onload = () => {
+        win.focus();
+        win.print();
+      };
+    } finally {
+      setPrinting(false);
+    }
+  }
+
   return (
     <Card>
       <CardHeader className="flex items-center gap-2">
@@ -588,9 +686,9 @@ function QrLabelCard({
           </div>
         </div>
         <div className="mt-3 flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => window.print()} className="no-print flex-1">
+          <Button variant="secondary" size="sm" onClick={onPrint} disabled={printing} className="flex-1">
             <PrinterIcon className="h-4 w-4" />
-            Print Label
+            {printing ? 'Preparing…' : 'Print Label'}
           </Button>
           {imageUrl && (
             <a href={imageUrl} download={`${assetTag}-label.png`} className="no-print flex-1">
