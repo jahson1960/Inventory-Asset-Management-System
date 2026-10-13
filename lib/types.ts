@@ -214,11 +214,17 @@ export interface DepreciationResult {
 }
 
 export type LabelOrientation = 'PORTRAIT' | 'LANDSCAPE';
+export type LabelTemplate = 'QR_LEFT_TEXT_RIGHT' | 'QR_TOP_TEXT_BOTTOM' | 'TEXT_ONLY' | 'QR_ONLY';
 
 export interface LabelPrintSettingsRecord {
   widthIn: string;
   heightIn: string;
   orientation: LabelOrientation;
+  marginTopIn: string;
+  marginRightIn: string;
+  marginBottomIn: string;
+  marginLeftIn: string;
+  template: LabelTemplate;
   fontFamily: string;
   fontSizePt: number;
 }
