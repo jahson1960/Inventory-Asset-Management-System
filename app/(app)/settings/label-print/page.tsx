@@ -286,6 +286,46 @@ function LabelPrintForm({
     };
   }
 
+  // The backend DTO requires widthIn/heightIn/every margin as numbers, but the same string
+  // values are also fed to printAssetLabel() for Test Print, which expects the LabelPrintSettingsRecord
+  // shape (margins as strings) — so the PUT body is built separately here rather than reusing
+  // currentSettings() directly, converting each numeric-string field with Number(...).
+  function buildUpdatePayload() {
+    const s = currentSettings();
+    return {
+      widthIn: Number(s.widthIn),
+      heightIn: Number(s.heightIn),
+      orientation: s.orientation,
+      marginTopIn: Number(s.marginTopIn),
+      marginRightIn: Number(s.marginRightIn),
+      marginBottomIn: Number(s.marginBottomIn),
+      marginLeftIn: Number(s.marginLeftIn),
+      includeQr: s.includeQr,
+      includeAssetTag: s.includeAssetTag,
+      includeName: s.includeName,
+      includeSerial: s.includeSerial,
+      layout: s.layout,
+      tagFontFamily: s.tagFontFamily,
+      tagFontSizePt: s.tagFontSizePt,
+      tagMarginTopIn: Number(s.tagMarginTopIn),
+      tagMarginRightIn: Number(s.tagMarginRightIn),
+      tagMarginBottomIn: Number(s.tagMarginBottomIn),
+      tagMarginLeftIn: Number(s.tagMarginLeftIn),
+      nameFontFamily: s.nameFontFamily,
+      nameFontSizePt: s.nameFontSizePt,
+      nameMarginTopIn: Number(s.nameMarginTopIn),
+      nameMarginRightIn: Number(s.nameMarginRightIn),
+      nameMarginBottomIn: Number(s.nameMarginBottomIn),
+      nameMarginLeftIn: Number(s.nameMarginLeftIn),
+      serialFontFamily: s.serialFontFamily,
+      serialFontSizePt: s.serialFontSizePt,
+      serialMarginTopIn: Number(s.serialMarginTopIn),
+      serialMarginRightIn: Number(s.serialMarginRightIn),
+      serialMarginBottomIn: Number(s.serialMarginBottomIn),
+      serialMarginLeftIn: Number(s.serialMarginLeftIn),
+    };
+  }
+
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     if (!includeQr && !includeAssetTag && !includeName && !includeSerial) {
@@ -298,7 +338,7 @@ function LabelPrintForm({
     setError(null);
     setSaved(false);
     try {
-      await api.put('/settings/label-print', currentSettings());
+      await api.put('/settings/label-print', buildUpdatePayload());
       setSaved(true);
       onSaved();
     } catch (err) {
