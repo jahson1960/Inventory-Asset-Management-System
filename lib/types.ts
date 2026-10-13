@@ -214,7 +214,7 @@ export interface DepreciationResult {
 }
 
 export type LabelOrientation = 'PORTRAIT' | 'LANDSCAPE';
-export type LabelTemplate = 'QR_LEFT_TEXT_RIGHT' | 'QR_TOP_TEXT_BOTTOM' | 'TEXT_ONLY' | 'QR_ONLY';
+export type LabelLayout = 'SIDE_BY_SIDE' | 'STACKED';
 
 export interface LabelPrintSettingsRecord {
   widthIn: string;
@@ -224,7 +224,11 @@ export interface LabelPrintSettingsRecord {
   marginRightIn: string;
   marginBottomIn: string;
   marginLeftIn: string;
-  template: LabelTemplate;
+  includeQr: boolean;
+  includeAssetTag: boolean;
+  includeName: boolean;
+  includeSerial: boolean;
+  layout: LabelLayout;
   fontFamily: string;
   fontSizePt: number;
 }

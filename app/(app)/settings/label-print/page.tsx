@@ -3,7 +3,8 @@
 import { useState, type FormEvent } from 'react';
 import { useApi } from '@/hooks/use-api';
 import { api, ApiError } from '@/lib/api-client';
-import type { LabelOrientation, LabelPrintSettingsRecord, LabelTemplate } from '@/lib/types';
+import { printAssetLabel } from '@/lib/label-print';
+import type { DisplaySettingsRecord, LabelOrientation, LabelLayout, LabelPrintSettingsRecord } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardBody } from '@/components/ui/card';
 import { Field, Label, Select, Input } from '@/components/ui/input';
@@ -20,13 +21,6 @@ const FONT_OPTIONS = [
   'Tahoma, Geneva, sans-serif',
 ];
 
-const TEMPLATE_OPTIONS: { value: LabelTemplate; label: string }[] = [
-  { value: 'QR_LEFT_TEXT_RIGHT', label: 'QR code left, text right' },
-  { value: 'QR_TOP_TEXT_BOTTOM', label: 'QR code on top, text below' },
-  { value: 'TEXT_ONLY', label: 'Text only (no QR code)' },
-  { value: 'QR_ONLY', label: 'QR code only (no text)' },
-];
-
 const DEFAULTS: LabelPrintSettingsRecord = {
   widthIn: '2',
   heightIn: '1',
@@ -35,13 +29,22 @@ const DEFAULTS: LabelPrintSettingsRecord = {
   marginRightIn: '0',
   marginBottomIn: '0',
   marginLeftIn: '0',
-  template: 'QR_LEFT_TEXT_RIGHT',
+  includeQr: true,
+  includeAssetTag: true,
+  includeName: true,
+  includeSerial: true,
+  layout: 'SIDE_BY_SIDE',
   fontFamily: FONT_OPTIONS[0],
   fontSizePt: 10,
 };
 
+const SAMPLE_TAG = 'AST-00123';
+const SAMPLE_NAME = 'Sample Asset Name';
+const SAMPLE_SERIAL = 'SN-00000000';
+
 export default function LabelPrintSettingsPage() {
   const { data: settings, loading, refetch } = useApi<LabelPrintSettingsRecord>('/settings/label-print');
+  const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
 
   if (loading) return <PageLoading />;
 
@@ -49,18 +52,31 @@ export default function LabelPrintSettingsPage() {
     <div className="max-w-xl">
       <PageHeader
         title="Label Printing"
-        description="Set the paper size, margins, content layout and font used when printing an asset tag label from the asset detail page."
+        description="Set the paper size, margins, which fields appear and the font used when printing an asset tag label from the asset detail page."
       />
       <Card>
         <CardBody>
-          <LabelPrintForm key={settings ? 'loaded' : 'loading'} settings={settings} onSaved={refetch} />
+          <LabelPrintForm
+            key={settings ? 'loaded' : 'loading'}
+            settings={settings}
+            qrCodeEnabled={displaySettings?.qrCodeEnabled ?? false}
+            onSaved={refetch}
+          />
         </CardBody>
       </Card>
     </div>
   );
 }
 
-function LabelPrintForm({ settings, onSaved }: { settings?: LabelPrintSettingsRecord; onSaved: () => void }) {
+function LabelPrintForm({
+  settings,
+  qrCodeEnabled,
+  onSaved,
+}: {
+  settings?: LabelPrintSettingsRecord;
+  qrCodeEnabled: boolean;
+  onSaved: () => void;
+}) {
   const [widthIn, setWidthIn] = useState(settings?.widthIn ?? DEFAULTS.widthIn);
   const [heightIn, setHeightIn] = useState(settings?.heightIn ?? DEFAULTS.heightIn);
   const [orientation, setOrientation] = useState<LabelOrientation>(settings?.orientation ?? DEFAULTS.orientation);
@@ -68,12 +84,17 @@ function LabelPrintForm({ settings, onSaved }: { settings?: LabelPrintSettingsRe
   const [marginRightIn, setMarginRightIn] = useState(settings?.marginRightIn ?? DEFAULTS.marginRightIn);
   const [marginBottomIn, setMarginBottomIn] = useState(settings?.marginBottomIn ?? DEFAULTS.marginBottomIn);
   const [marginLeftIn, setMarginLeftIn] = useState(settings?.marginLeftIn ?? DEFAULTS.marginLeftIn);
-  const [template, setTemplate] = useState<LabelTemplate>(settings?.template ?? DEFAULTS.template);
+  const [includeQr, setIncludeQr] = useState(settings?.includeQr ?? DEFAULTS.includeQr);
+  const [includeAssetTag, setIncludeAssetTag] = useState(settings?.includeAssetTag ?? DEFAULTS.includeAssetTag);
+  const [includeName, setIncludeName] = useState(settings?.includeName ?? DEFAULTS.includeName);
+  const [includeSerial, setIncludeSerial] = useState(settings?.includeSerial ?? DEFAULTS.includeSerial);
+  const [layout, setLayout] = useState<LabelLayout>(settings?.layout ?? DEFAULTS.layout);
   const [fontFamily, setFontFamily] = useState(settings?.fontFamily ?? DEFAULTS.fontFamily);
   const [fontSizePt, setFontSizePt] = useState(settings?.fontSizePt ?? DEFAULTS.fontSizePt);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const [saved, setSaved] = useState(false);
   const confirm = useConfirm();
 
@@ -85,31 +106,47 @@ function LabelPrintForm({ settings, onSaved }: { settings?: LabelPrintSettingsRe
     setMarginRightIn(d.marginRightIn);
     setMarginBottomIn(d.marginBottomIn);
     setMarginLeftIn(d.marginLeftIn);
-    setTemplate(d.template);
+    setIncludeQr(d.includeQr);
+    setIncludeAssetTag(d.includeAssetTag);
+    setIncludeName(d.includeName);
+    setIncludeSerial(d.includeSerial);
+    setLayout(d.layout);
     setFontFamily(d.fontFamily);
     setFontSizePt(d.fontSizePt);
   }
 
+  function currentSettings(): LabelPrintSettingsRecord {
+    return {
+      widthIn,
+      heightIn,
+      orientation,
+      marginTopIn,
+      marginRightIn,
+      marginBottomIn,
+      marginLeftIn,
+      includeQr,
+      includeAssetTag,
+      includeName,
+      includeSerial,
+      layout,
+      fontFamily,
+      fontSizePt: Number(fontSizePt),
+    };
+  }
+
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (!includeQr && !includeAssetTag && !includeName && !includeSerial) {
+      setError('At least one of QR code, asset tag, name or serial number must be included');
+      return;
+    }
     const ok = await confirm({ title: 'Save these label printing settings?' });
     if (!ok) return;
     setSubmitting(true);
     setError(null);
     setSaved(false);
     try {
-      await api.put('/settings/label-print', {
-        widthIn: Number(widthIn),
-        heightIn: Number(heightIn),
-        orientation,
-        marginTopIn: Number(marginTopIn),
-        marginRightIn: Number(marginRightIn),
-        marginBottomIn: Number(marginBottomIn),
-        marginLeftIn: Number(marginLeftIn),
-        template,
-        fontFamily,
-        fontSizePt: Number(fontSizePt),
-      });
+      await api.put('/settings/label-print', currentSettings());
       setSaved(true);
       onSaved();
     } catch (err) {
@@ -122,7 +159,7 @@ function LabelPrintForm({ settings, onSaved }: { settings?: LabelPrintSettingsRe
   async function onRestoreDefaults() {
     const ok = await confirm({
       title: 'Restore default label printing settings?',
-      message: 'This resets paper size, margins, template and font back to the factory defaults (2in x 1in, portrait, no margins, QR left / text right, Arial 10pt).',
+      message: 'This resets paper size, margins, included fields, layout and font back to the factory defaults (2in x 1in, portrait, no margins, QR + tag + name + serial side by side, Arial 10pt).',
     });
     if (!ok) return;
     setRestoring(true);
@@ -139,10 +176,31 @@ function LabelPrintForm({ settings, onSaved }: { settings?: LabelPrintSettingsRe
     }
   }
 
+  async function onTestPrint() {
+    setPrinting(true);
+    setError(null);
+    try {
+      // Uses whatever is currently in the form, saved or not, so an admin can try changes
+      // before committing to them.
+      await printAssetLabel({
+        settings: currentSettings(),
+        assetTag: SAMPLE_TAG,
+        assetName: SAMPLE_NAME,
+        serialNumber: SAMPLE_SERIAL,
+        qrCodeEnabled,
+        qrCodePath: '/settings/label-print/sample-qr',
+      });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to prepare test print');
+    } finally {
+      setPrinting(false);
+    }
+  }
+
   const previewWidthIn = Math.min(Number(widthIn) || 2, 4);
   const previewHeightIn = Math.min(Number(heightIn) || 1, 4);
-  const showQr = template !== 'TEXT_ONLY';
-  const showText = template !== 'QR_ONLY';
+  const showQr = includeQr && qrCodeEnabled;
+  const showText = includeAssetTag || includeName || includeSerial;
 
   return (
     <form onSubmit={onSubmit}>
@@ -204,14 +262,34 @@ function LabelPrintForm({ settings, onSaved }: { settings?: LabelPrintSettingsRe
         </Field>
       </div>
 
+      <p className="mb-1.5 mt-3 text-xs font-medium text-slate-600">What to print</p>
+      <div className="mb-3 grid grid-cols-2 gap-x-3 gap-y-2">
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" checked={includeQr} onChange={(e) => setIncludeQr(e.target.checked)} />
+          QR code
+        </label>
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" checked={includeAssetTag} onChange={(e) => setIncludeAssetTag(e.target.checked)} />
+          Asset tag
+        </label>
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" checked={includeName} onChange={(e) => setIncludeName(e.target.checked)} />
+          Asset name
+        </label>
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" checked={includeSerial} onChange={(e) => setIncludeSerial(e.target.checked)} />
+          Serial number
+        </label>
+      </div>
+      {!qrCodeEnabled && (
+        <p className="mb-3 -mt-2 text-xs text-slate-400">QR codes are currently disabled organization-wide in Settings → Display, so none will print even if checked above.</p>
+      )}
+
       <Field>
-        <Label htmlFor="template">Content layout</Label>
-        <Select id="template" value={template} onChange={(e) => setTemplate(e.target.value as LabelTemplate)}>
-          {TEMPLATE_OPTIONS.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
+        <Label htmlFor="layout">Layout (when more than one field is included)</Label>
+        <Select id="layout" value={layout} onChange={(e) => setLayout(e.target.value as LabelLayout)}>
+          <option value="SIDE_BY_SIDE">Side by side</option>
+          <option value="STACKED">Stacked</option>
         </Select>
       </Field>
 
@@ -256,7 +334,7 @@ function LabelPrintForm({ settings, onSaved }: { settings?: LabelPrintSettingsRe
           <div
             className="flex items-center justify-center gap-1.5"
             style={{
-              flexDirection: template === 'QR_TOP_TEXT_BOTTOM' ? 'column' : 'row',
+              flexDirection: layout === 'STACKED' ? 'column' : 'row',
               fontFamily,
               fontSize: `${fontSizePt}pt`,
               transform: orientation === 'LANDSCAPE' ? 'rotate(90deg)' : undefined,
@@ -269,19 +347,23 @@ function LabelPrintForm({ settings, onSaved }: { settings?: LabelPrintSettingsRe
             )}
             {showText && (
               <div className="min-w-0 text-center leading-tight">
-                <div className="truncate font-bold text-navy">AST-00123</div>
-                <div className="truncate text-slate-600">Sample Asset Name</div>
+                {includeAssetTag && <div className="truncate font-bold text-navy">{SAMPLE_TAG}</div>}
+                {includeName && <div className="truncate text-slate-600">{SAMPLE_NAME}</div>}
+                {includeSerial && <div className="truncate text-slate-500">S/N: {SAMPLE_SERIAL}</div>}
               </div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button type="submit" disabled={submitting || restoring}>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="submit" disabled={submitting || restoring || printing}>
           {submitting ? 'Saving…' : 'Save'}
         </Button>
-        <Button type="button" variant="secondary" onClick={onRestoreDefaults} disabled={submitting || restoring}>
+        <Button type="button" variant="secondary" onClick={onTestPrint} disabled={submitting || restoring || printing}>
+          {printing ? 'Preparing…' : 'Test Print'}
+        </Button>
+        <Button type="button" variant="secondary" onClick={onRestoreDefaults} disabled={submitting || restoring || printing}>
           {restoring ? 'Restoring…' : 'Restore Defaults'}
         </Button>
         {saved && <span className="text-xs text-emerald-600">Saved</span>}
