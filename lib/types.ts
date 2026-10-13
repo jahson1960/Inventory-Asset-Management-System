@@ -229,8 +229,24 @@ export interface LabelPrintSettingsRecord {
   includeName: boolean;
   includeSerial: boolean;
   layout: LabelLayout;
-  fontFamily: string;
-  fontSizePt: number;
+  tagFontFamily: string;
+  tagFontSizePt: number;
+  tagMarginTopIn: string;
+  tagMarginRightIn: string;
+  tagMarginBottomIn: string;
+  tagMarginLeftIn: string;
+  nameFontFamily: string;
+  nameFontSizePt: number;
+  nameMarginTopIn: string;
+  nameMarginRightIn: string;
+  nameMarginBottomIn: string;
+  nameMarginLeftIn: string;
+  serialFontFamily: string;
+  serialFontSizePt: number;
+  serialMarginTopIn: string;
+  serialMarginRightIn: string;
+  serialMarginBottomIn: string;
+  serialMarginLeftIn: string;
 }
 
 export interface AssetValuationItem {

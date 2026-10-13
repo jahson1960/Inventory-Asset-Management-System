@@ -34,8 +34,24 @@ const DEFAULTS: LabelPrintSettingsRecord = {
   includeName: true,
   includeSerial: true,
   layout: 'SIDE_BY_SIDE',
-  fontFamily: FONT_OPTIONS[0],
-  fontSizePt: 10,
+  tagFontFamily: FONT_OPTIONS[0],
+  tagFontSizePt: 10,
+  tagMarginTopIn: '0',
+  tagMarginRightIn: '0',
+  tagMarginBottomIn: '0',
+  tagMarginLeftIn: '0',
+  nameFontFamily: FONT_OPTIONS[0],
+  nameFontSizePt: 9,
+  nameMarginTopIn: '0',
+  nameMarginRightIn: '0',
+  nameMarginBottomIn: '0',
+  nameMarginLeftIn: '0',
+  serialFontFamily: FONT_OPTIONS[0],
+  serialFontSizePt: 8,
+  serialMarginTopIn: '0',
+  serialMarginRightIn: '0',
+  serialMarginBottomIn: '0',
+  serialMarginLeftIn: '0',
 };
 
 const SAMPLE_TAG = 'AST-00123';
@@ -49,10 +65,10 @@ export default function LabelPrintSettingsPage() {
   if (loading) return <PageLoading />;
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-2xl">
       <PageHeader
         title="Label Printing"
-        description="Set the paper size, margins, which fields appear and the font used when printing an asset tag label from the asset detail page."
+        description="Set the paper size, margins, which fields appear, and each field's own font, size and spacing, used when printing an asset tag label from the asset detail page."
       />
       <Card>
         <CardBody>
@@ -64,6 +80,90 @@ export default function LabelPrintSettingsPage() {
           />
         </CardBody>
       </Card>
+    </div>
+  );
+}
+
+/** One field's font + margin controls — reused for asset tag, asset name and serial number so
+ *  each can be styled independently instead of sharing one label-wide font. */
+function FieldStyleFields({
+  title,
+  fontFamily,
+  setFontFamily,
+  fontSizePt,
+  setFontSizePt,
+  marginTopIn,
+  setMarginTopIn,
+  marginRightIn,
+  setMarginRightIn,
+  marginBottomIn,
+  setMarginBottomIn,
+  marginLeftIn,
+  setMarginLeftIn,
+  idPrefix,
+}: {
+  title: string;
+  fontFamily: string;
+  setFontFamily: (v: string) => void;
+  fontSizePt: number;
+  setFontSizePt: (v: number) => void;
+  marginTopIn: string;
+  setMarginTopIn: (v: string) => void;
+  marginRightIn: string;
+  setMarginRightIn: (v: string) => void;
+  marginBottomIn: string;
+  setMarginBottomIn: (v: string) => void;
+  marginLeftIn: string;
+  setMarginLeftIn: (v: string) => void;
+  idPrefix: string;
+}) {
+  return (
+    <div className="mb-3 rounded-lg border border-slate-200 p-3">
+      <p className="mb-2 text-xs font-semibold text-slate-700">{title}</p>
+      <div className="grid grid-cols-2 gap-3">
+        <Field>
+          <Label htmlFor={`${idPrefix}-font`}>Font</Label>
+          <Select id={`${idPrefix}-font`} value={fontFamily} onChange={(e) => setFontFamily(e.target.value)}>
+            {FONT_OPTIONS.map((f) => (
+              <option key={f} value={f}>
+                {f.split(',')[0].replace(/"/g, '')}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field>
+          <Label htmlFor={`${idPrefix}-size`} required>Font size (pt)</Label>
+          <Input
+            id={`${idPrefix}-size`}
+            type="number"
+            step="1"
+            min="4"
+            max="72"
+            required
+            value={fontSizePt}
+            onChange={(e) => setFontSizePt(Number(e.target.value))}
+          />
+        </Field>
+      </div>
+      <p className="mb-1.5 mt-2 text-xs text-slate-500">Margin (inches)</p>
+      <div className="grid grid-cols-4 gap-2">
+        <Field>
+          <Label htmlFor={`${idPrefix}-mt`}>Top</Label>
+          <Input id={`${idPrefix}-mt`} type="number" step="0.05" min="0" max="2" value={marginTopIn} onChange={(e) => setMarginTopIn(e.target.value)} />
+        </Field>
+        <Field>
+          <Label htmlFor={`${idPrefix}-mr`}>Right</Label>
+          <Input id={`${idPrefix}-mr`} type="number" step="0.05" min="0" max="2" value={marginRightIn} onChange={(e) => setMarginRightIn(e.target.value)} />
+        </Field>
+        <Field>
+          <Label htmlFor={`${idPrefix}-mb`}>Bottom</Label>
+          <Input id={`${idPrefix}-mb`} type="number" step="0.05" min="0" max="2" value={marginBottomIn} onChange={(e) => setMarginBottomIn(e.target.value)} />
+        </Field>
+        <Field>
+          <Label htmlFor={`${idPrefix}-ml`}>Left</Label>
+          <Input id={`${idPrefix}-ml`} type="number" step="0.05" min="0" max="2" value={marginLeftIn} onChange={(e) => setMarginLeftIn(e.target.value)} />
+        </Field>
+      </div>
     </div>
   );
 }
@@ -89,8 +189,28 @@ function LabelPrintForm({
   const [includeName, setIncludeName] = useState(settings?.includeName ?? DEFAULTS.includeName);
   const [includeSerial, setIncludeSerial] = useState(settings?.includeSerial ?? DEFAULTS.includeSerial);
   const [layout, setLayout] = useState<LabelLayout>(settings?.layout ?? DEFAULTS.layout);
-  const [fontFamily, setFontFamily] = useState(settings?.fontFamily ?? DEFAULTS.fontFamily);
-  const [fontSizePt, setFontSizePt] = useState(settings?.fontSizePt ?? DEFAULTS.fontSizePt);
+
+  const [tagFontFamily, setTagFontFamily] = useState(settings?.tagFontFamily ?? DEFAULTS.tagFontFamily);
+  const [tagFontSizePt, setTagFontSizePt] = useState(settings?.tagFontSizePt ?? DEFAULTS.tagFontSizePt);
+  const [tagMarginTopIn, setTagMarginTopIn] = useState(settings?.tagMarginTopIn ?? DEFAULTS.tagMarginTopIn);
+  const [tagMarginRightIn, setTagMarginRightIn] = useState(settings?.tagMarginRightIn ?? DEFAULTS.tagMarginRightIn);
+  const [tagMarginBottomIn, setTagMarginBottomIn] = useState(settings?.tagMarginBottomIn ?? DEFAULTS.tagMarginBottomIn);
+  const [tagMarginLeftIn, setTagMarginLeftIn] = useState(settings?.tagMarginLeftIn ?? DEFAULTS.tagMarginLeftIn);
+
+  const [nameFontFamily, setNameFontFamily] = useState(settings?.nameFontFamily ?? DEFAULTS.nameFontFamily);
+  const [nameFontSizePt, setNameFontSizePt] = useState(settings?.nameFontSizePt ?? DEFAULTS.nameFontSizePt);
+  const [nameMarginTopIn, setNameMarginTopIn] = useState(settings?.nameMarginTopIn ?? DEFAULTS.nameMarginTopIn);
+  const [nameMarginRightIn, setNameMarginRightIn] = useState(settings?.nameMarginRightIn ?? DEFAULTS.nameMarginRightIn);
+  const [nameMarginBottomIn, setNameMarginBottomIn] = useState(settings?.nameMarginBottomIn ?? DEFAULTS.nameMarginBottomIn);
+  const [nameMarginLeftIn, setNameMarginLeftIn] = useState(settings?.nameMarginLeftIn ?? DEFAULTS.nameMarginLeftIn);
+
+  const [serialFontFamily, setSerialFontFamily] = useState(settings?.serialFontFamily ?? DEFAULTS.serialFontFamily);
+  const [serialFontSizePt, setSerialFontSizePt] = useState(settings?.serialFontSizePt ?? DEFAULTS.serialFontSizePt);
+  const [serialMarginTopIn, setSerialMarginTopIn] = useState(settings?.serialMarginTopIn ?? DEFAULTS.serialMarginTopIn);
+  const [serialMarginRightIn, setSerialMarginRightIn] = useState(settings?.serialMarginRightIn ?? DEFAULTS.serialMarginRightIn);
+  const [serialMarginBottomIn, setSerialMarginBottomIn] = useState(settings?.serialMarginBottomIn ?? DEFAULTS.serialMarginBottomIn);
+  const [serialMarginLeftIn, setSerialMarginLeftIn] = useState(settings?.serialMarginLeftIn ?? DEFAULTS.serialMarginLeftIn);
+
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -111,8 +231,24 @@ function LabelPrintForm({
     setIncludeName(d.includeName);
     setIncludeSerial(d.includeSerial);
     setLayout(d.layout);
-    setFontFamily(d.fontFamily);
-    setFontSizePt(d.fontSizePt);
+    setTagFontFamily(d.tagFontFamily);
+    setTagFontSizePt(d.tagFontSizePt);
+    setTagMarginTopIn(d.tagMarginTopIn);
+    setTagMarginRightIn(d.tagMarginRightIn);
+    setTagMarginBottomIn(d.tagMarginBottomIn);
+    setTagMarginLeftIn(d.tagMarginLeftIn);
+    setNameFontFamily(d.nameFontFamily);
+    setNameFontSizePt(d.nameFontSizePt);
+    setNameMarginTopIn(d.nameMarginTopIn);
+    setNameMarginRightIn(d.nameMarginRightIn);
+    setNameMarginBottomIn(d.nameMarginBottomIn);
+    setNameMarginLeftIn(d.nameMarginLeftIn);
+    setSerialFontFamily(d.serialFontFamily);
+    setSerialFontSizePt(d.serialFontSizePt);
+    setSerialMarginTopIn(d.serialMarginTopIn);
+    setSerialMarginRightIn(d.serialMarginRightIn);
+    setSerialMarginBottomIn(d.serialMarginBottomIn);
+    setSerialMarginLeftIn(d.serialMarginLeftIn);
   }
 
   function currentSettings(): LabelPrintSettingsRecord {
@@ -129,8 +265,24 @@ function LabelPrintForm({
       includeName,
       includeSerial,
       layout,
-      fontFamily,
-      fontSizePt: Number(fontSizePt),
+      tagFontFamily,
+      tagFontSizePt: Number(tagFontSizePt),
+      tagMarginTopIn,
+      tagMarginRightIn,
+      tagMarginBottomIn,
+      tagMarginLeftIn,
+      nameFontFamily,
+      nameFontSizePt: Number(nameFontSizePt),
+      nameMarginTopIn,
+      nameMarginRightIn,
+      nameMarginBottomIn,
+      nameMarginLeftIn,
+      serialFontFamily,
+      serialFontSizePt: Number(serialFontSizePt),
+      serialMarginTopIn,
+      serialMarginRightIn,
+      serialMarginBottomIn,
+      serialMarginLeftIn,
     };
   }
 
@@ -159,7 +311,7 @@ function LabelPrintForm({
   async function onRestoreDefaults() {
     const ok = await confirm({
       title: 'Restore default label printing settings?',
-      message: 'This resets paper size, margins, included fields, layout and font back to the factory defaults (2in x 1in, portrait, no margins, QR + tag + name + serial side by side, Arial 10pt).',
+      message: 'This resets paper size, margins, included fields, layout and each field\'s font back to the factory defaults (2in x 1in, portrait, no margins, QR + tag + name + serial side by side).',
     });
     if (!ok) return;
     setRestoring(true);
@@ -242,7 +394,7 @@ function LabelPrintForm({
         </Select>
       </Field>
 
-      <p className="mb-1.5 mt-3 text-xs font-medium text-slate-600">Margins (inches)</p>
+      <p className="mb-1.5 mt-3 text-xs font-medium text-slate-600">Paper margins (inches)</p>
       <div className="mb-3 grid grid-cols-4 gap-2">
         <Field>
           <Label htmlFor="marginTopIn">Top</Label>
@@ -293,30 +445,61 @@ function LabelPrintForm({
         </Select>
       </Field>
 
-      <Field>
-        <Label htmlFor="fontFamily">Font</Label>
-        <Select id="fontFamily" value={fontFamily} onChange={(e) => setFontFamily(e.target.value)}>
-          {FONT_OPTIONS.map((f) => (
-            <option key={f} value={f}>
-              {f.split(',')[0].replace(/"/g, '')}
-            </option>
-          ))}
-        </Select>
-      </Field>
-
-      <Field>
-        <Label htmlFor="fontSizePt" required>Font size (pt)</Label>
-        <Input
-          id="fontSizePt"
-          type="number"
-          step="1"
-          min="4"
-          max="72"
-          required
-          value={fontSizePt}
-          onChange={(e) => setFontSizePt(Number(e.target.value))}
+      <p className="mb-1.5 mt-4 text-xs font-medium text-slate-600">Per-field font &amp; spacing</p>
+      {includeAssetTag && (
+        <FieldStyleFields
+          title="Asset tag"
+          idPrefix="tag"
+          fontFamily={tagFontFamily}
+          setFontFamily={setTagFontFamily}
+          fontSizePt={tagFontSizePt}
+          setFontSizePt={setTagFontSizePt}
+          marginTopIn={tagMarginTopIn}
+          setMarginTopIn={setTagMarginTopIn}
+          marginRightIn={tagMarginRightIn}
+          setMarginRightIn={setTagMarginRightIn}
+          marginBottomIn={tagMarginBottomIn}
+          setMarginBottomIn={setTagMarginBottomIn}
+          marginLeftIn={tagMarginLeftIn}
+          setMarginLeftIn={setTagMarginLeftIn}
         />
-      </Field>
+      )}
+      {includeName && (
+        <FieldStyleFields
+          title="Asset name"
+          idPrefix="name"
+          fontFamily={nameFontFamily}
+          setFontFamily={setNameFontFamily}
+          fontSizePt={nameFontSizePt}
+          setFontSizePt={setNameFontSizePt}
+          marginTopIn={nameMarginTopIn}
+          setMarginTopIn={setNameMarginTopIn}
+          marginRightIn={nameMarginRightIn}
+          setMarginRightIn={setNameMarginRightIn}
+          marginBottomIn={nameMarginBottomIn}
+          setMarginBottomIn={setNameMarginBottomIn}
+          marginLeftIn={nameMarginLeftIn}
+          setMarginLeftIn={setNameMarginLeftIn}
+        />
+      )}
+      {includeSerial && (
+        <FieldStyleFields
+          title="Serial number"
+          idPrefix="serial"
+          fontFamily={serialFontFamily}
+          setFontFamily={setSerialFontFamily}
+          fontSizePt={serialFontSizePt}
+          setFontSizePt={setSerialFontSizePt}
+          marginTopIn={serialMarginTopIn}
+          setMarginTopIn={setSerialMarginTopIn}
+          marginRightIn={serialMarginRightIn}
+          setMarginRightIn={setSerialMarginRightIn}
+          marginBottomIn={serialMarginBottomIn}
+          setMarginBottomIn={setSerialMarginBottomIn}
+          marginLeftIn={serialMarginLeftIn}
+          setMarginLeftIn={setSerialMarginLeftIn}
+        />
+      )}
 
       <div className="mb-4 mt-2">
         <p className="mb-1.5 text-xs font-medium text-slate-500">Preview</p>
@@ -335,8 +518,6 @@ function LabelPrintForm({
             className="flex items-center justify-center gap-1.5"
             style={{
               flexDirection: layout === 'STACKED' ? 'column' : 'row',
-              fontFamily,
-              fontSize: `${fontSizePt}pt`,
               transform: orientation === 'LANDSCAPE' ? 'rotate(90deg)' : undefined,
             }}
           >
@@ -347,9 +528,42 @@ function LabelPrintForm({
             )}
             {showText && (
               <div className="min-w-0 text-center leading-tight">
-                {includeAssetTag && <div className="truncate font-bold text-navy">{SAMPLE_TAG}</div>}
-                {includeName && <div className="truncate text-slate-600">{SAMPLE_NAME}</div>}
-                {includeSerial && <div className="truncate text-slate-500">S/N: {SAMPLE_SERIAL}</div>}
+                {includeAssetTag && (
+                  <div
+                    className="truncate font-bold text-navy"
+                    style={{
+                      fontFamily: tagFontFamily,
+                      fontSize: `${tagFontSizePt}pt`,
+                      margin: `${tagMarginTopIn}in ${tagMarginRightIn}in ${tagMarginBottomIn}in ${tagMarginLeftIn}in`,
+                    }}
+                  >
+                    {SAMPLE_TAG}
+                  </div>
+                )}
+                {includeName && (
+                  <div
+                    className="truncate text-slate-600"
+                    style={{
+                      fontFamily: nameFontFamily,
+                      fontSize: `${nameFontSizePt}pt`,
+                      margin: `${nameMarginTopIn}in ${nameMarginRightIn}in ${nameMarginBottomIn}in ${nameMarginLeftIn}in`,
+                    }}
+                  >
+                    {SAMPLE_NAME}
+                  </div>
+                )}
+                {includeSerial && (
+                  <div
+                    className="truncate text-slate-500"
+                    style={{
+                      fontFamily: serialFontFamily,
+                      fontSize: `${serialFontSizePt}pt`,
+                      margin: `${serialMarginTopIn}in ${serialMarginRightIn}in ${serialMarginBottomIn}in ${serialMarginLeftIn}in`,
+                    }}
+                  >
+                    S/N: {SAMPLE_SERIAL}
+                  </div>
+                )}
               </div>
             )}
           </div>

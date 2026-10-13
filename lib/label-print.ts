@@ -14,9 +14,60 @@ export const DEFAULT_LABEL_SETTINGS: LabelPrintSettingsRecord = {
   includeName: true,
   includeSerial: true,
   layout: 'SIDE_BY_SIDE',
-  fontFamily: 'Arial, Helvetica, sans-serif',
-  fontSizePt: 10,
+  tagFontFamily: 'Arial, Helvetica, sans-serif',
+  tagFontSizePt: 10,
+  tagMarginTopIn: '0',
+  tagMarginRightIn: '0',
+  tagMarginBottomIn: '0',
+  tagMarginLeftIn: '0',
+  nameFontFamily: 'Arial, Helvetica, sans-serif',
+  nameFontSizePt: 9,
+  nameMarginTopIn: '0',
+  nameMarginRightIn: '0',
+  nameMarginBottomIn: '0',
+  nameMarginLeftIn: '0',
+  serialFontFamily: 'Arial, Helvetica, sans-serif',
+  serialFontSizePt: 8,
+  serialMarginTopIn: '0',
+  serialMarginRightIn: '0',
+  serialMarginBottomIn: '0',
+  serialMarginLeftIn: '0',
 };
+
+function fieldCss(settings: LabelPrintSettingsRecord, field: 'tag' | 'name' | 'serial'): string {
+  const style =
+    field === 'tag'
+      ? {
+          fontFamily: settings.tagFontFamily,
+          fontSizePt: settings.tagFontSizePt,
+          top: settings.tagMarginTopIn,
+          right: settings.tagMarginRightIn,
+          bottom: settings.tagMarginBottomIn,
+          left: settings.tagMarginLeftIn,
+        }
+      : field === 'name'
+        ? {
+            fontFamily: settings.nameFontFamily,
+            fontSizePt: settings.nameFontSizePt,
+            top: settings.nameMarginTopIn,
+            right: settings.nameMarginRightIn,
+            bottom: settings.nameMarginBottomIn,
+            left: settings.nameMarginLeftIn,
+          }
+        : {
+            fontFamily: settings.serialFontFamily,
+            fontSizePt: settings.serialFontSizePt,
+            top: settings.serialMarginTopIn,
+            right: settings.serialMarginRightIn,
+            bottom: settings.serialMarginBottomIn,
+            left: settings.serialMarginLeftIn,
+          };
+  const top = Number(style.top) || 0;
+  const right = Number(style.right) || 0;
+  const bottom = Number(style.bottom) || 0;
+  const left = Number(style.left) || 0;
+  return `font-family:${style.fontFamily};font-size:${style.fontSizePt}pt;margin:${top}in ${right}in ${bottom}in ${left}in;`;
+}
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
@@ -74,9 +125,9 @@ export async function printAssetLabel({
   const textHtml =
     showTag || showName || showSerial
       ? `<div class="text">
-      ${showTag ? `<div class="tag">${escapeHtml(assetTag)}</div>` : ''}
-      ${showName ? `<div class="name">${escapeHtml(assetName)}</div>` : ''}
-      ${showSerial && serialNumber ? `<div class="serial">S/N: ${escapeHtml(serialNumber)}</div>` : ''}
+      ${showTag ? `<div class="tag" style="${fieldCss(settings, 'tag')}">${escapeHtml(assetTag)}</div>` : ''}
+      ${showName ? `<div class="line" style="${fieldCss(settings, 'name')}">${escapeHtml(assetName)}</div>` : ''}
+      ${showSerial && serialNumber ? `<div class="line" style="${fieldCss(settings, 'serial')}">S/N: ${escapeHtml(serialNumber)}</div>` : ''}
     </div>`
       : '';
 
@@ -107,14 +158,13 @@ export async function printAssetLabel({
     align-items: center;
     justify-content: center;
     gap: 0.08in;
-    font-family: ${settings.fontFamily};
-    font-size: ${settings.fontSizePt}pt;
     ${rotated ? 'transform: rotate(90deg);' : ''}
   }
   .qr { width: ${qrSizeIn}in; height: ${qrSizeIn}in; flex-shrink: 0; }
-  .text { min-width: 0; line-height: 1.2; overflow: hidden; text-align: ${stacked ? 'center' : 'left'}; }
-  .tag { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .name, .serial { font-size: 0.82em; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .text { min-width: 0; line-height: 1.2; text-align: ${stacked ? 'center' : 'left'}; }
+  .tag, .line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tag { font-weight: bold; }
+  .line { color: #333; }
 </style>
 </head>
 <body>
