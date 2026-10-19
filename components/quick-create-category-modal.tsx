@@ -23,6 +23,7 @@ export function QuickCreateCategoryModal({
   const endpoint = kind === 'asset' ? '/asset-categories' : '/inventory-categories';
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  const [tagCode, setTagCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const confirm = useConfirm();
@@ -34,9 +35,14 @@ export function QuickCreateCategoryModal({
     setSubmitting(true);
     setError(null);
     try {
-      const category = await api.post<AssetCategory | InventoryCategory>(endpoint, { name, code });
+      const category = await api.post<AssetCategory | InventoryCategory>(endpoint, {
+        name,
+        code,
+        ...(kind === 'asset' ? { tagCode: tagCode.trim() || undefined } : {}),
+      });
       setName('');
       setCode('');
+      setTagCode('');
       onCreated(category);
       onClose();
     } catch (err) {
@@ -58,6 +64,19 @@ export function QuickCreateCategoryModal({
           <Label htmlFor="quickCategoryCode" required>Code</Label>
           <Input id="quickCategoryCode" required value={code} onChange={(e) => setCode(e.target.value)} />
         </Field>
+        {kind === 'asset' && (
+          <Field>
+            <Label htmlFor="quickCategoryTagCode">Tag code (for auto-generated asset tags)</Label>
+            <Input
+              id="quickCategoryTagCode"
+              placeholder="e.g. LAP"
+              value={tagCode}
+              onChange={(e) => setTagCode(e.target.value.toUpperCase())}
+              maxLength={10}
+            />
+            <p className="mt-1 text-xs text-slate-400">Leave blank to require a manually-typed asset tag for this category.</p>
+          </Field>
+        )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel

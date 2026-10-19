@@ -287,6 +287,7 @@ export interface DisplaySettingsRecord {
   scanEnabled: boolean;
   qrCodeEnabled: boolean;
   inlineCreateEnabled: boolean;
+  assetTagPrefix: string;
 }
 
 export interface ThemeSettingsRecord {
@@ -365,6 +366,7 @@ export interface AssetCategory {
   code: string;
   description: string | null;
   isActive: boolean;
+  tagCode: string | null;
 }
 
 export interface InventoryCategory {

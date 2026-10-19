@@ -115,6 +115,7 @@ function DisplayForm({ settings, onSaved }: { settings?: DisplaySettingsRecord; 
   const [scanEnabled, setScanEnabled] = useState(settings?.scanEnabled ?? false);
   const [qrCodeEnabled, setQrCodeEnabled] = useState(settings?.qrCodeEnabled ?? false);
   const [inlineCreateEnabled, setInlineCreateEnabled] = useState(settings?.inlineCreateEnabled ?? true);
+  const [assetTagPrefix, setAssetTagPrefix] = useState(settings?.assetTagPrefix ?? 'RBSN');
   const [maxLogoSizeKb, setMaxLogoSizeKb] = useState(settings?.maxLogoSizeKb ?? 2048);
   const [maxFaviconSizeKb, setMaxFaviconSizeKb] = useState(settings?.maxFaviconSizeKb ?? 512);
   const [maxSignatureSizeKb, setMaxSignatureSizeKb] = useState(settings?.maxSignatureSizeKb ?? 2048);
@@ -158,6 +159,7 @@ function DisplayForm({ settings, onSaved }: { settings?: DisplaySettingsRecord; 
         scanEnabled,
         qrCodeEnabled,
         inlineCreateEnabled,
+        assetTagPrefix,
         maxLogoSizeKb,
         maxFaviconSizeKb,
         maxSignatureSizeKb,
@@ -241,6 +243,21 @@ function DisplayForm({ settings, onSaved }: { settings?: DisplaySettingsRecord; 
         <input type="checkbox" checked={inlineCreateEnabled} onChange={(e) => setInlineCreateEnabled(e.target.checked)} />
         Allow creating a new category, location or supplier directly from the asset/inventory forms
       </label>
+
+      <Field>
+        <Label htmlFor="assetTagPrefix" required>Asset tag prefix</Label>
+        <Input
+          id="assetTagPrefix"
+          required
+          placeholder="e.g. RBSN"
+          value={assetTagPrefix}
+          onChange={(e) => setAssetTagPrefix(e.target.value)}
+          className="max-w-32"
+        />
+        <p className="mt-1 text-xs text-slate-400">
+          Used for auto-generated asset tags, e.g. {assetTagPrefix || 'RBSN'}-LAP-0001. Categories with no tag code configured still need a manually-entered tag.
+        </p>
+      </Field>
 
       <Field>
         <Label htmlFor="pageSize">Rows per page</Label>

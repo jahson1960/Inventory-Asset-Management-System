@@ -139,6 +139,12 @@ function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
   const [submitting, setSubmitting] = useState(false);
   const confirm = useConfirm();
 
+  // A category with a tagCode configured gets its asset tag auto-generated server-side
+  // (RBSN-LAP-0001, etc.) — the field below switches to read-only for those instead of asking
+  // for a typed tag.
+  const selectedCategory = (categories ?? []).find((c) => c.id === categoryId);
+  const autoTagCode = selectedCategory?.tagCode ?? null;
+
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     const ok = await confirm({ title: 'Create this asset?' });
@@ -147,7 +153,7 @@ function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
     setError(null);
     try {
       const asset = await api.post<Asset>('/assets', {
-        assetTag,
+        assetTag: autoTagCode ? undefined : assetTag,
         trackingType,
         categoryId,
         name,
@@ -200,18 +206,27 @@ function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
             <div className="grid grid-cols-2 gap-3">
               <Field>
                 <Label htmlFor="assetTag">
-                  Asset tag <Required />
+                  Asset tag {!autoTagCode && <Required />}
                 </Label>
                 <IconInput icon={<TagIcon className="h-4 w-4" />}>
-                  <Input
-                    id="assetTag"
-                    required
-                    placeholder="e.g. FA-00123"
-                    className="pl-9"
-                    value={assetTag}
-                    onChange={(e) => setAssetTag(e.target.value)}
-                  />
+                  {autoTagCode ? (
+                    <Input id="assetTag" disabled className="pl-9" value="Auto-generated on save" />
+                  ) : (
+                    <Input
+                      id="assetTag"
+                      required
+                      placeholder="e.g. FA-00123"
+                      className="pl-9"
+                      value={assetTag}
+                      onChange={(e) => setAssetTag(e.target.value)}
+                    />
+                  )}
                 </IconInput>
+                {autoTagCode && (
+                  <p className="mt-1 text-xs text-slate-400">
+                    This category auto-generates tags (e.g. {displaySettings?.assetTagPrefix ?? 'RBSN'}-{autoTagCode}-0001).
+                  </p>
+                )}
               </Field>
               <Field>
                 <Label htmlFor="trackingType">
