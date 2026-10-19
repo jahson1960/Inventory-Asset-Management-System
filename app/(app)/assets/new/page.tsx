@@ -203,13 +203,42 @@ function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
           <CardBody>
             <SectionHeader number={1} title="Asset Details" />
 
+            <Field>
+              <div className="mb-1 flex items-center justify-between">
+                <Label htmlFor="category">
+                  Category <Required />
+                </Label>
+                {canQuickCreateCategory && (
+                  <button
+                    type="button"
+                    onClick={() => setQuickCreateOpen('category')}
+                    className="text-xs font-medium text-gold-dark hover:underline"
+                  >
+                    + New category
+                  </button>
+                )}
+              </div>
+              <IconInput icon={<ListIcon className="h-4 w-4" />}>
+                <Select id="category" required className="pl-9" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                  <option value="">Select category</option>
+                  {(categories ?? []).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </Select>
+              </IconInput>
+            </Field>
+
             <div className="grid grid-cols-2 gap-3">
               <Field>
                 <Label htmlFor="assetTag">
-                  Asset tag {!autoTagCode && <Required />}
+                  Asset tag {!categoryId || !autoTagCode ? <Required /> : null}
                 </Label>
                 <IconInput icon={<TagIcon className="h-4 w-4" />}>
-                  {autoTagCode ? (
+                  {!categoryId ? (
+                    <Input id="assetTag" disabled className="pl-9" value="" placeholder="Select a category first" />
+                  ) : autoTagCode ? (
                     <Input id="assetTag" disabled className="pl-9" value="Auto-generated on save" />
                   ) : (
                     <Input
@@ -276,33 +305,6 @@ function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
-              </IconInput>
-            </Field>
-
-            <Field>
-              <div className="mb-1 flex items-center justify-between">
-                <Label htmlFor="category">
-                  Category <Required />
-                </Label>
-                {canQuickCreateCategory && (
-                  <button
-                    type="button"
-                    onClick={() => setQuickCreateOpen('category')}
-                    className="text-xs font-medium text-gold-dark hover:underline"
-                  >
-                    + New category
-                  </button>
-                )}
-              </div>
-              <IconInput icon={<ListIcon className="h-4 w-4" />}>
-                <Select id="category" required className="pl-9" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                  <option value="">Select category</option>
-                  {(categories ?? []).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </Select>
               </IconInput>
             </Field>
 
