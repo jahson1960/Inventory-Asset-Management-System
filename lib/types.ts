@@ -366,7 +366,6 @@ export interface AssetCategory {
   code: string;
   description: string | null;
   isActive: boolean;
-  tagCode: string | null;
 }
 
 export interface InventoryCategory {

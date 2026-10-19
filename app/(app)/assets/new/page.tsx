@@ -106,9 +106,9 @@ function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
   const canQuickCreateSupplier = inlineCreateEnabled && can('suppliers.manage');
   const [quickCreateOpen, setQuickCreateOpen] = useState<'category' | 'location' | 'supplier' | null>(null);
 
-  // Asset tag, serial number and notes are never copied — a tag/serial must be unique per
-  // physical unit, and notes tend to hold unit-specific history that wouldn't apply to a new one.
-  const [assetTag, setAssetTag] = useState('');
+  // Serial number and notes are never copied — notes tend to hold unit-specific history that
+  // wouldn't apply to a new unit, and a serial must be unique per physical unit. Asset tag is
+  // never copied either, since it's always auto-generated server-side (see autoTagCode below).
   const [trackingType, setTrackingType] = useState<AssetTrackingType>(duplicateSource?.trackingType ?? 'FIXED_ASSET');
   const [categoryId, setCategoryId] = useState(duplicateSource?.categoryId ?? '');
   const [name, setName] = useState(duplicateSource?.name ?? '');
@@ -139,11 +139,10 @@ function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
   const [submitting, setSubmitting] = useState(false);
   const confirm = useConfirm();
 
-  // A category with a tagCode configured gets its asset tag auto-generated server-side
-  // (RBSN-LAP-0001, etc.) — the field below switches to read-only for those instead of asking
-  // for a typed tag.
+  // Every category auto-generates its asset tag server-side from its own Code (RBSN-LAP-0001,
+  // etc.) — there's no manual-entry path, so the field below is always read-only.
   const selectedCategory = (categories ?? []).find((c) => c.id === categoryId);
-  const autoTagCode = selectedCategory?.tagCode ?? null;
+  const autoTagCode = selectedCategory?.code ?? null;
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -153,7 +152,6 @@ function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
     setError(null);
     try {
       const asset = await api.post<Asset>('/assets', {
-        assetTag: autoTagCode ? undefined : assetTag,
         trackingType,
         categoryId,
         name,
@@ -190,7 +188,7 @@ function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
         title={duplicateSource ? 'Duplicate Asset' : 'Register New Asset'}
         description={
           duplicateSource
-            ? `Copied from ${duplicateSource.assetTag}. Set a new asset tag and serial number, adjust anything else, then save.`
+            ? `Copied from ${duplicateSource.assetTag}. A new tag is generated automatically; set a serial number, adjust anything else, then save.`
             : 'Register a fixed asset or controlled equipment item.'
         }
         breadcrumb={[{ label: 'Assets', href: '/assets' }, { label: duplicateSource ? 'Duplicate Asset' : 'New Asset' }]}
@@ -232,23 +230,12 @@ function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
 
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <Label htmlFor="assetTag">
-                  Asset tag {!categoryId || !autoTagCode ? <Required /> : null}
-                </Label>
+                <Label htmlFor="assetTag">Asset tag</Label>
                 <IconInput icon={<TagIcon className="h-4 w-4" />}>
                   {!categoryId ? (
                     <Input id="assetTag" disabled className="pl-9" value="" placeholder="Select a category first" />
-                  ) : autoTagCode ? (
-                    <Input id="assetTag" disabled className="pl-9" value="Auto-generated on save" />
                   ) : (
-                    <Input
-                      id="assetTag"
-                      required
-                      placeholder="e.g. FA-00123"
-                      className="pl-9"
-                      value={assetTag}
-                      onChange={(e) => setAssetTag(e.target.value)}
-                    />
+                    <Input id="assetTag" disabled className="pl-9" value="Auto-generated on save" />
                   )}
                 </IconInput>
                 {autoTagCode && (

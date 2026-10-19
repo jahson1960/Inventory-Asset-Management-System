@@ -92,7 +92,6 @@ function EditAssetForm({ asset }: { asset: Asset }) {
   const canQuickCreateSupplier = inlineCreateEnabled && can('suppliers.manage');
   const [quickCreateOpen, setQuickCreateOpen] = useState<'category' | 'location' | 'supplier' | null>(null);
 
-  const [assetTag, setAssetTag] = useState(asset.assetTag);
   const [trackingType, setTrackingType] = useState<AssetTrackingType>(asset.trackingType);
   const [categoryId, setCategoryId] = useState(asset.categoryId);
   const [name, setName] = useState(asset.name);
@@ -129,7 +128,6 @@ function EditAssetForm({ asset }: { asset: Asset }) {
     setError(null);
     try {
       await api.patch<Asset>(`/assets/${asset.id}`, {
-        assetTag,
         trackingType,
         categoryId,
         name,
@@ -177,19 +175,11 @@ function EditAssetForm({ asset }: { asset: Asset }) {
 
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <Label htmlFor="assetTag">
-                  Asset tag <Required />
-                </Label>
+                <Label htmlFor="assetTag">Asset tag</Label>
                 <IconInput icon={<TagIcon className="h-4 w-4" />}>
-                  <Input
-                    id="assetTag"
-                    required
-                    placeholder="e.g. FA-00123"
-                    className="pl-9"
-                    value={assetTag}
-                    onChange={(e) => setAssetTag(e.target.value)}
-                  />
+                  <Input id="assetTag" disabled className="pl-9" value={asset.assetTag} />
                 </IconInput>
+                <p className="mt-1 text-xs text-slate-400">Auto-generated — can&apos;t be changed after creation.</p>
               </Field>
               <Field>
                 <Label htmlFor="trackingType">
