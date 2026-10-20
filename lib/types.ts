@@ -249,6 +249,38 @@ export interface LabelPrintSettingsRecord {
   serialMarginLeftIn: string;
 }
 
+export interface ConditionPrintSettingsRecord {
+  widthIn: string;
+  heightIn: string;
+  orientation: LabelOrientation;
+  marginTopIn: string;
+  marginRightIn: string;
+  marginBottomIn: string;
+  marginLeftIn: string;
+  includeAssetTag: boolean;
+  includeCondition: boolean;
+  includeNote: boolean;
+  layout: LabelLayout;
+  tagFontFamily: string;
+  tagFontSizePt: number;
+  tagMarginTopIn: string;
+  tagMarginRightIn: string;
+  tagMarginBottomIn: string;
+  tagMarginLeftIn: string;
+  conditionFontFamily: string;
+  conditionFontSizePt: number;
+  conditionMarginTopIn: string;
+  conditionMarginRightIn: string;
+  conditionMarginBottomIn: string;
+  conditionMarginLeftIn: string;
+  noteFontFamily: string;
+  noteFontSizePt: number;
+  noteMarginTopIn: string;
+  noteMarginRightIn: string;
+  noteMarginBottomIn: string;
+  noteMarginLeftIn: string;
+}
+
 export interface AssetValuationItem {
   assetId: string;
   assetTag: string;
@@ -417,6 +449,7 @@ export interface Asset {
   warrantyEndDate: string | null;
   warrantyProvider: string | null;
   condition: AssetCondition;
+  conditionNote: string | null;
   status: AssetStatus;
   currentLocationId: string;
   currentCustodianId: string | null;

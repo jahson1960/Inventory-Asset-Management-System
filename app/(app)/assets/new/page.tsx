@@ -106,9 +106,10 @@ function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
   const canQuickCreateSupplier = inlineCreateEnabled && can('suppliers.manage');
   const [quickCreateOpen, setQuickCreateOpen] = useState<'category' | 'location' | 'supplier' | null>(null);
 
-  // Serial number and notes are never copied — notes tend to hold unit-specific history that
-  // wouldn't apply to a new unit, and a serial must be unique per physical unit. Asset tag is
-  // never copied either, since it's always auto-generated server-side (see autoTagCode below).
+  // Serial number, notes and condition note are never copied — they tend to hold unit-specific
+  // history that wouldn't apply to a new unit, and a serial must be unique per physical unit.
+  // Asset tag is never copied either, since it's always auto-generated server-side (see
+  // autoTagCode below).
   const [trackingType, setTrackingType] = useState<AssetTrackingType>(duplicateSource?.trackingType ?? 'FIXED_ASSET');
   const [categoryId, setCategoryId] = useState(duplicateSource?.categoryId ?? '');
   const [name, setName] = useState(duplicateSource?.name ?? '');
@@ -123,6 +124,7 @@ function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
   const [warrantyEndDate, setWarrantyEndDate] = useState(toDateInput(duplicateSource?.warrantyEndDate));
   const [warrantyProvider, setWarrantyProvider] = useState(duplicateSource?.warrantyProvider ?? '');
   const [condition, setCondition] = useState<AssetCondition>(duplicateSource?.condition ?? 'NEW');
+  const [conditionNote, setConditionNote] = useState('');
   const [branchId, setBranchId] = useState(duplicateSource?.branchId ?? '');
   const [currentLocationId, setCurrentLocationId] = useState(duplicateSource?.currentLocationId ?? '');
   // The asset's branch is derived server-side from its location (there's no separate branchId
@@ -166,6 +168,7 @@ function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
         warrantyEndDate: warrantyEndDate || undefined,
         warrantyProvider: warrantyProvider || undefined,
         condition,
+        conditionNote: conditionNote || undefined,
         currentLocationId,
         usefulLifeMonths: usefulLifeMonths ? Number(usefulLifeMonths) : undefined,
         salvageValue: salvageValue ? Number(salvageValue) : undefined,
@@ -597,6 +600,20 @@ function NewAssetForm({ duplicateSource }: { duplicateSource: Asset | null }) {
                     </option>
                   ))}
                 </Select>
+              </IconInput>
+            </Field>
+
+            <Field>
+              <Label htmlFor="conditionNote">Condition note</Label>
+              <IconInput icon={<FileTextIcon className="h-4 w-4" />} align="top">
+                <Textarea
+                  id="conditionNote"
+                  rows={2}
+                  placeholder="Describe the specific condition or fault, e.g. &quot;screen cracked, bottom-right corner&quot;…"
+                  className="pl-9"
+                  value={conditionNote}
+                  onChange={(e) => setConditionNote(e.target.value)}
+                />
               </IconInput>
             </Field>
 

@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { api, ApiError, fetchAuthenticatedObjectUrl, fileUrl, uploadFile } from '@/lib/api-client';
 import { DEFAULT_LABEL_SETTINGS, printAssetLabel } from '@/lib/label-print';
-import type { Asset, AssetAssignment, AssetStatus, CurrentUser, DisplaySettingsRecord, LabelPrintSettingsRecord, MaintenanceRequestRecord, Paginated, Technician } from '@/lib/types';
+import { DEFAULT_CONDITION_SETTINGS, printAssetCondition } from '@/lib/condition-print';
+import type { Asset, AssetAssignment, AssetStatus, ConditionPrintSettingsRecord, CurrentUser, DisplaySettingsRecord, LabelPrintSettingsRecord, MaintenanceRequestRecord, Paginated, Technician } from '@/lib/types';
 import { statusTone, type BadgeTone } from '@/lib/status-tone';
 import { cn } from '@/lib/cn';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
@@ -70,6 +71,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
   const { data: maintenanceHistory, refetch: refetchMaintenance } = useApi<MaintenanceRequestRecord[]>(`/maintenance-requests/by-asset/${id}`);
   const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
   const { data: labelSettings } = useApi<LabelPrintSettingsRecord>('/settings/label-print');
+  const { data: conditionPrintSettings } = useApi<ConditionPrintSettingsRecord>('/settings/condition-print');
   const [assignOpen, setAssignOpen] = useState(false);
   const [sendToTechOpen, setSendToTechOpen] = useState(false);
   const [statusSubmitting, setStatusSubmitting] = useState(false);
@@ -225,6 +227,9 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
             <IconDetailRow icon={<ShieldIcon className="h-4 w-4" />} label="Condition">
               <DotPill label={asset.condition} tone={CONDITION_TONE[asset.condition] ?? 'neutral'} />
             </IconDetailRow>
+            {asset.conditionNote && (
+              <IconDetailRow icon={<AlertTriangleIcon className="h-4 w-4" />} label="Condition note" value={asset.conditionNote} />
+            )}
             <IconDetailRow icon={<MapPinIcon className="h-4 w-4" />} label="Location" value={asset.currentLocation?.name ?? '—'} />
             <IconDetailRow icon={<UserIcon className="h-4 w-4" />} label="Custodian">
               {asset.currentCustodian ? (
@@ -373,6 +378,12 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
           serialNumber={asset.serialNumber}
           qrCodeEnabled={displaySettings?.qrCodeEnabled ?? false}
           labelSettings={labelSettings}
+        />
+        <ConditionLabelCard
+          assetTag={asset.assetTag}
+          condition={asset.condition}
+          conditionNote={asset.conditionNote}
+          settings={conditionPrintSettings}
         />
         <DepreciationCard asset={asset} />
       </div>
@@ -622,6 +633,48 @@ function QrLabelCard({
               </Button>
             </a>
           )}
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+function ConditionLabelCard({
+  assetTag,
+  condition,
+  conditionNote,
+  settings,
+}: {
+  assetTag: string;
+  condition: string;
+  conditionNote: string | null;
+  settings?: ConditionPrintSettingsRecord;
+}) {
+  function onPrint() {
+    printAssetCondition({
+      settings: settings ?? DEFAULT_CONDITION_SETTINGS,
+      assetTag,
+      condition,
+      conditionNote,
+    });
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex items-center gap-2">
+        <AlertTriangleIcon className="h-4 w-4 text-slate-400" />
+        Condition
+      </CardHeader>
+      <CardBody>
+        <div className="rounded-lg bg-gold-light/40 p-3">
+          <p className="truncate font-semibold text-navy">{condition}</p>
+          <p className="truncate text-xs text-slate-500">{conditionNote || 'No condition note recorded.'}</p>
+        </div>
+        <div className="mt-3">
+          <Button variant="secondary" size="sm" onClick={onPrint} className="w-full">
+            <PrinterIcon className="h-4 w-4" />
+            Print Condition
+          </Button>
         </div>
       </CardBody>
     </Card>

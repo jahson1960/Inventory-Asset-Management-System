@@ -106,6 +106,7 @@ function EditAssetForm({ asset }: { asset: Asset }) {
   const [warrantyEndDate, setWarrantyEndDate] = useState(toDateInput(asset.warrantyEndDate));
   const [warrantyProvider, setWarrantyProvider] = useState(asset.warrantyProvider ?? '');
   const [condition, setCondition] = useState<AssetCondition>(asset.condition);
+  const [conditionNote, setConditionNote] = useState(asset.conditionNote ?? '');
   const [branchId, setBranchId] = useState(asset.branchId);
   const [currentLocationId, setCurrentLocationId] = useState(asset.currentLocationId);
   // Same reasoning as the New Asset form: the asset's branch is derived server-side from its
@@ -142,6 +143,7 @@ function EditAssetForm({ asset }: { asset: Asset }) {
         warrantyEndDate: warrantyEndDate || undefined,
         warrantyProvider: warrantyProvider || undefined,
         condition,
+        conditionNote: conditionNote || null,
         currentLocationId,
         usefulLifeMonths: usefulLifeMonths ? Number(usefulLifeMonths) : undefined,
         salvageValue: salvageValue ? Number(salvageValue) : undefined,
@@ -561,6 +563,20 @@ function EditAssetForm({ asset }: { asset: Asset }) {
                     </option>
                   ))}
                 </Select>
+              </IconInput>
+            </Field>
+
+            <Field>
+              <Label htmlFor="conditionNote">Condition note</Label>
+              <IconInput icon={<FileTextIcon className="h-4 w-4" />} align="top">
+                <Textarea
+                  id="conditionNote"
+                  rows={2}
+                  placeholder="Describe the specific condition or fault, e.g. &quot;screen cracked, bottom-right corner&quot;…"
+                  className="pl-9"
+                  value={conditionNote}
+                  onChange={(e) => setConditionNote(e.target.value)}
+                />
               </IconInput>
             </Field>
 

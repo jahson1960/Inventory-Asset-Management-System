@@ -92,6 +92,7 @@ const NAV_KEYS: { key: string; label: string }[] = [
   { key: 'nav.settingsDepreciation', label: 'Settings → Depreciation' },
   { key: 'nav.settingsDisplay', label: 'Settings → Display' },
   { key: 'nav.settingsLabelPrinting', label: 'Settings → Label Printing' },
+  { key: 'nav.settingsConditionPrinting', label: 'Settings → Condition Printing' },
 ];
 
 export default function PermissionsSettingsPage() {

@@ -105,6 +105,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Depreciation', href: '/settings/depreciation', permission: 'nav.settingsDepreciation' },
       { label: 'Display', href: '/settings/display', permission: 'nav.settingsDisplay' },
       { label: 'Label Printing', href: '/settings/label-print', permission: 'nav.settingsLabelPrinting' },
+      { label: 'Condition Printing', href: '/settings/condition-print', permission: 'nav.settingsConditionPrinting' },
       { label: 'Roles & Permissions', href: '/settings/permissions', roles: ['SUPER_ADMIN'] },
     ],
   },
