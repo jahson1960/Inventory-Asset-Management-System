@@ -4,7 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useApi } from '@/hooks/use-api';
 import { api, ApiError } from '@/lib/api-client';
 import { printAssetCondition } from '@/lib/condition-print';
-import type { ConditionPrintSettingsRecord, LabelOrientation, LabelLayout } from '@/lib/types';
+import type { ConditionPrintSettingsRecord, LabelOrientation, LabelLayout, TextAlign } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardBody } from '@/components/ui/card';
 import { Field, Label, Select, Input } from '@/components/ui/input';
@@ -35,23 +35,33 @@ const DEFAULTS: ConditionPrintSettingsRecord = {
   layout: 'SIDE_BY_SIDE',
   tagFontFamily: FONT_OPTIONS[0],
   tagFontSizePt: 10,
+  tagTextAlign: 'CENTER',
   tagMarginTopIn: '0',
   tagMarginRightIn: '0',
   tagMarginBottomIn: '0',
   tagMarginLeftIn: '0',
   conditionFontFamily: FONT_OPTIONS[0],
   conditionFontSizePt: 9,
+  conditionTextAlign: 'CENTER',
   conditionMarginTopIn: '0',
   conditionMarginRightIn: '0',
   conditionMarginBottomIn: '0',
   conditionMarginLeftIn: '0',
   noteFontFamily: FONT_OPTIONS[0],
   noteFontSizePt: 8,
+  noteTextAlign: 'CENTER',
   noteMarginTopIn: '0',
   noteMarginRightIn: '0',
   noteMarginBottomIn: '0',
   noteMarginLeftIn: '0',
 };
+
+const TEXT_ALIGN_OPTIONS: { value: TextAlign; label: string }[] = [
+  { value: 'LEFT', label: 'Left' },
+  { value: 'CENTER', label: 'Center' },
+  { value: 'RIGHT', label: 'Right' },
+  { value: 'JUSTIFY', label: 'Justify' },
+];
 
 const SAMPLE_TAG = 'AST-00123';
 const SAMPLE_CONDITION = 'DAMAGED';
@@ -85,6 +95,8 @@ function FieldStyleFields({
   setFontFamily,
   fontSizePt,
   setFontSizePt,
+  textAlign,
+  setTextAlign,
   marginTopIn,
   setMarginTopIn,
   marginRightIn,
@@ -100,6 +112,8 @@ function FieldStyleFields({
   setFontFamily: (v: string) => void;
   fontSizePt: number;
   setFontSizePt: (v: number) => void;
+  textAlign: TextAlign;
+  setTextAlign: (v: TextAlign) => void;
   marginTopIn: string;
   setMarginTopIn: (v: string) => void;
   marginRightIn: string;
@@ -138,6 +152,16 @@ function FieldStyleFields({
           />
         </Field>
       </div>
+      <Field>
+        <Label htmlFor={`${idPrefix}-align`}>Alignment</Label>
+        <Select id={`${idPrefix}-align`} value={textAlign} onChange={(e) => setTextAlign(e.target.value as TextAlign)}>
+          {TEXT_ALIGN_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
+      </Field>
       <p className="mb-1.5 mt-2 text-xs text-slate-500">Margin (inches)</p>
       <div className="grid grid-cols-4 gap-2">
         <Field>
@@ -176,6 +200,7 @@ function ConditionPrintForm({ settings, onSaved }: { settings?: ConditionPrintSe
 
   const [tagFontFamily, setTagFontFamily] = useState(settings?.tagFontFamily ?? DEFAULTS.tagFontFamily);
   const [tagFontSizePt, setTagFontSizePt] = useState(settings?.tagFontSizePt ?? DEFAULTS.tagFontSizePt);
+  const [tagTextAlign, setTagTextAlign] = useState<TextAlign>(settings?.tagTextAlign ?? DEFAULTS.tagTextAlign);
   const [tagMarginTopIn, setTagMarginTopIn] = useState(settings?.tagMarginTopIn ?? DEFAULTS.tagMarginTopIn);
   const [tagMarginRightIn, setTagMarginRightIn] = useState(settings?.tagMarginRightIn ?? DEFAULTS.tagMarginRightIn);
   const [tagMarginBottomIn, setTagMarginBottomIn] = useState(settings?.tagMarginBottomIn ?? DEFAULTS.tagMarginBottomIn);
@@ -183,6 +208,7 @@ function ConditionPrintForm({ settings, onSaved }: { settings?: ConditionPrintSe
 
   const [conditionFontFamily, setConditionFontFamily] = useState(settings?.conditionFontFamily ?? DEFAULTS.conditionFontFamily);
   const [conditionFontSizePt, setConditionFontSizePt] = useState(settings?.conditionFontSizePt ?? DEFAULTS.conditionFontSizePt);
+  const [conditionTextAlign, setConditionTextAlign] = useState<TextAlign>(settings?.conditionTextAlign ?? DEFAULTS.conditionTextAlign);
   const [conditionMarginTopIn, setConditionMarginTopIn] = useState(settings?.conditionMarginTopIn ?? DEFAULTS.conditionMarginTopIn);
   const [conditionMarginRightIn, setConditionMarginRightIn] = useState(settings?.conditionMarginRightIn ?? DEFAULTS.conditionMarginRightIn);
   const [conditionMarginBottomIn, setConditionMarginBottomIn] = useState(settings?.conditionMarginBottomIn ?? DEFAULTS.conditionMarginBottomIn);
@@ -190,6 +216,7 @@ function ConditionPrintForm({ settings, onSaved }: { settings?: ConditionPrintSe
 
   const [noteFontFamily, setNoteFontFamily] = useState(settings?.noteFontFamily ?? DEFAULTS.noteFontFamily);
   const [noteFontSizePt, setNoteFontSizePt] = useState(settings?.noteFontSizePt ?? DEFAULTS.noteFontSizePt);
+  const [noteTextAlign, setNoteTextAlign] = useState<TextAlign>(settings?.noteTextAlign ?? DEFAULTS.noteTextAlign);
   const [noteMarginTopIn, setNoteMarginTopIn] = useState(settings?.noteMarginTopIn ?? DEFAULTS.noteMarginTopIn);
   const [noteMarginRightIn, setNoteMarginRightIn] = useState(settings?.noteMarginRightIn ?? DEFAULTS.noteMarginRightIn);
   const [noteMarginBottomIn, setNoteMarginBottomIn] = useState(settings?.noteMarginBottomIn ?? DEFAULTS.noteMarginBottomIn);
@@ -216,18 +243,21 @@ function ConditionPrintForm({ settings, onSaved }: { settings?: ConditionPrintSe
     setLayout(d.layout);
     setTagFontFamily(d.tagFontFamily);
     setTagFontSizePt(d.tagFontSizePt);
+    setTagTextAlign(d.tagTextAlign);
     setTagMarginTopIn(d.tagMarginTopIn);
     setTagMarginRightIn(d.tagMarginRightIn);
     setTagMarginBottomIn(d.tagMarginBottomIn);
     setTagMarginLeftIn(d.tagMarginLeftIn);
     setConditionFontFamily(d.conditionFontFamily);
     setConditionFontSizePt(d.conditionFontSizePt);
+    setConditionTextAlign(d.conditionTextAlign);
     setConditionMarginTopIn(d.conditionMarginTopIn);
     setConditionMarginRightIn(d.conditionMarginRightIn);
     setConditionMarginBottomIn(d.conditionMarginBottomIn);
     setConditionMarginLeftIn(d.conditionMarginLeftIn);
     setNoteFontFamily(d.noteFontFamily);
     setNoteFontSizePt(d.noteFontSizePt);
+    setNoteTextAlign(d.noteTextAlign);
     setNoteMarginTopIn(d.noteMarginTopIn);
     setNoteMarginRightIn(d.noteMarginRightIn);
     setNoteMarginBottomIn(d.noteMarginBottomIn);
@@ -249,18 +279,21 @@ function ConditionPrintForm({ settings, onSaved }: { settings?: ConditionPrintSe
       layout,
       tagFontFamily,
       tagFontSizePt: Number(tagFontSizePt),
+      tagTextAlign,
       tagMarginTopIn,
       tagMarginRightIn,
       tagMarginBottomIn,
       tagMarginLeftIn,
       conditionFontFamily,
       conditionFontSizePt: Number(conditionFontSizePt),
+      conditionTextAlign,
       conditionMarginTopIn,
       conditionMarginRightIn,
       conditionMarginBottomIn,
       conditionMarginLeftIn,
       noteFontFamily,
       noteFontSizePt: Number(noteFontSizePt),
+      noteTextAlign,
       noteMarginTopIn,
       noteMarginRightIn,
       noteMarginBottomIn,
@@ -288,18 +321,21 @@ function ConditionPrintForm({ settings, onSaved }: { settings?: ConditionPrintSe
       layout: s.layout,
       tagFontFamily: s.tagFontFamily,
       tagFontSizePt: s.tagFontSizePt,
+      tagTextAlign: s.tagTextAlign,
       tagMarginTopIn: Number(s.tagMarginTopIn),
       tagMarginRightIn: Number(s.tagMarginRightIn),
       tagMarginBottomIn: Number(s.tagMarginBottomIn),
       tagMarginLeftIn: Number(s.tagMarginLeftIn),
       conditionFontFamily: s.conditionFontFamily,
       conditionFontSizePt: s.conditionFontSizePt,
+      conditionTextAlign: s.conditionTextAlign,
       conditionMarginTopIn: Number(s.conditionMarginTopIn),
       conditionMarginRightIn: Number(s.conditionMarginRightIn),
       conditionMarginBottomIn: Number(s.conditionMarginBottomIn),
       conditionMarginLeftIn: Number(s.conditionMarginLeftIn),
       noteFontFamily: s.noteFontFamily,
       noteFontSizePt: s.noteFontSizePt,
+      noteTextAlign: s.noteTextAlign,
       noteMarginTopIn: Number(s.noteMarginTopIn),
       noteMarginRightIn: Number(s.noteMarginRightIn),
       noteMarginBottomIn: Number(s.noteMarginBottomIn),
@@ -465,6 +501,8 @@ function ConditionPrintForm({ settings, onSaved }: { settings?: ConditionPrintSe
           setFontFamily={setTagFontFamily}
           fontSizePt={tagFontSizePt}
           setFontSizePt={setTagFontSizePt}
+          textAlign={tagTextAlign}
+          setTextAlign={setTagTextAlign}
           marginTopIn={tagMarginTopIn}
           setMarginTopIn={setTagMarginTopIn}
           marginRightIn={tagMarginRightIn}
@@ -483,6 +521,8 @@ function ConditionPrintForm({ settings, onSaved }: { settings?: ConditionPrintSe
           setFontFamily={setConditionFontFamily}
           fontSizePt={conditionFontSizePt}
           setFontSizePt={setConditionFontSizePt}
+          textAlign={conditionTextAlign}
+          setTextAlign={setConditionTextAlign}
           marginTopIn={conditionMarginTopIn}
           setMarginTopIn={setConditionMarginTopIn}
           marginRightIn={conditionMarginRightIn}
@@ -501,6 +541,8 @@ function ConditionPrintForm({ settings, onSaved }: { settings?: ConditionPrintSe
           setFontFamily={setNoteFontFamily}
           fontSizePt={noteFontSizePt}
           setFontSizePt={setNoteFontSizePt}
+          textAlign={noteTextAlign}
+          setTextAlign={setNoteTextAlign}
           marginTopIn={noteMarginTopIn}
           setMarginTopIn={setNoteMarginTopIn}
           marginRightIn={noteMarginRightIn}
@@ -539,6 +581,7 @@ function ConditionPrintForm({ settings, onSaved }: { settings?: ConditionPrintSe
                   style={{
                     fontFamily: tagFontFamily,
                     fontSize: `${tagFontSizePt}pt`,
+                    textAlign: tagTextAlign.toLowerCase() as 'left' | 'center' | 'right' | 'justify',
                     margin: `${tagMarginTopIn}in ${tagMarginRightIn}in ${tagMarginBottomIn}in ${tagMarginLeftIn}in`,
                   }}
                 >
@@ -551,6 +594,7 @@ function ConditionPrintForm({ settings, onSaved }: { settings?: ConditionPrintSe
                   style={{
                     fontFamily: conditionFontFamily,
                     fontSize: `${conditionFontSizePt}pt`,
+                    textAlign: conditionTextAlign.toLowerCase() as 'left' | 'center' | 'right' | 'justify',
                     margin: `${conditionMarginTopIn}in ${conditionMarginRightIn}in ${conditionMarginBottomIn}in ${conditionMarginLeftIn}in`,
                   }}
                 >
@@ -563,6 +607,7 @@ function ConditionPrintForm({ settings, onSaved }: { settings?: ConditionPrintSe
                   style={{
                     fontFamily: noteFontFamily,
                     fontSize: `${noteFontSizePt}pt`,
+                    textAlign: noteTextAlign.toLowerCase() as 'left' | 'center' | 'right' | 'justify',
                     margin: `${noteMarginTopIn}in ${noteMarginRightIn}in ${noteMarginBottomIn}in ${noteMarginLeftIn}in`,
                   }}
                 >

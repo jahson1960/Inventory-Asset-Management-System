@@ -4,7 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useApi } from '@/hooks/use-api';
 import { api, ApiError } from '@/lib/api-client';
 import { printAssetLabel } from '@/lib/label-print';
-import type { DisplaySettingsRecord, LabelOrientation, LabelLayout, LabelPrintSettingsRecord } from '@/lib/types';
+import type { DisplaySettingsRecord, LabelOrientation, LabelLayout, TextAlign, LabelPrintSettingsRecord } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardBody } from '@/components/ui/card';
 import { Field, Label, Select, Input } from '@/components/ui/input';
@@ -36,23 +36,33 @@ const DEFAULTS: LabelPrintSettingsRecord = {
   layout: 'SIDE_BY_SIDE',
   tagFontFamily: FONT_OPTIONS[0],
   tagFontSizePt: 10,
+  tagTextAlign: 'CENTER',
   tagMarginTopIn: '0',
   tagMarginRightIn: '0',
   tagMarginBottomIn: '0',
   tagMarginLeftIn: '0',
   nameFontFamily: FONT_OPTIONS[0],
   nameFontSizePt: 9,
+  nameTextAlign: 'CENTER',
   nameMarginTopIn: '0',
   nameMarginRightIn: '0',
   nameMarginBottomIn: '0',
   nameMarginLeftIn: '0',
   serialFontFamily: FONT_OPTIONS[0],
   serialFontSizePt: 8,
+  serialTextAlign: 'CENTER',
   serialMarginTopIn: '0',
   serialMarginRightIn: '0',
   serialMarginBottomIn: '0',
   serialMarginLeftIn: '0',
 };
+
+const TEXT_ALIGN_OPTIONS: { value: TextAlign; label: string }[] = [
+  { value: 'LEFT', label: 'Left' },
+  { value: 'CENTER', label: 'Center' },
+  { value: 'RIGHT', label: 'Right' },
+  { value: 'JUSTIFY', label: 'Justify' },
+];
 
 const SAMPLE_TAG = 'AST-00123';
 const SAMPLE_NAME = 'Sample Asset Name';
@@ -92,6 +102,8 @@ function FieldStyleFields({
   setFontFamily,
   fontSizePt,
   setFontSizePt,
+  textAlign,
+  setTextAlign,
   marginTopIn,
   setMarginTopIn,
   marginRightIn,
@@ -107,6 +119,8 @@ function FieldStyleFields({
   setFontFamily: (v: string) => void;
   fontSizePt: number;
   setFontSizePt: (v: number) => void;
+  textAlign: TextAlign;
+  setTextAlign: (v: TextAlign) => void;
   marginTopIn: string;
   setMarginTopIn: (v: string) => void;
   marginRightIn: string;
@@ -145,6 +159,16 @@ function FieldStyleFields({
           />
         </Field>
       </div>
+      <Field>
+        <Label htmlFor={`${idPrefix}-align`}>Alignment</Label>
+        <Select id={`${idPrefix}-align`} value={textAlign} onChange={(e) => setTextAlign(e.target.value as TextAlign)}>
+          {TEXT_ALIGN_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
+      </Field>
       <p className="mb-1.5 mt-2 text-xs text-slate-500">Margin (inches)</p>
       <div className="grid grid-cols-4 gap-2">
         <Field>
@@ -192,6 +216,7 @@ function LabelPrintForm({
 
   const [tagFontFamily, setTagFontFamily] = useState(settings?.tagFontFamily ?? DEFAULTS.tagFontFamily);
   const [tagFontSizePt, setTagFontSizePt] = useState(settings?.tagFontSizePt ?? DEFAULTS.tagFontSizePt);
+  const [tagTextAlign, setTagTextAlign] = useState<TextAlign>(settings?.tagTextAlign ?? DEFAULTS.tagTextAlign);
   const [tagMarginTopIn, setTagMarginTopIn] = useState(settings?.tagMarginTopIn ?? DEFAULTS.tagMarginTopIn);
   const [tagMarginRightIn, setTagMarginRightIn] = useState(settings?.tagMarginRightIn ?? DEFAULTS.tagMarginRightIn);
   const [tagMarginBottomIn, setTagMarginBottomIn] = useState(settings?.tagMarginBottomIn ?? DEFAULTS.tagMarginBottomIn);
@@ -199,6 +224,7 @@ function LabelPrintForm({
 
   const [nameFontFamily, setNameFontFamily] = useState(settings?.nameFontFamily ?? DEFAULTS.nameFontFamily);
   const [nameFontSizePt, setNameFontSizePt] = useState(settings?.nameFontSizePt ?? DEFAULTS.nameFontSizePt);
+  const [nameTextAlign, setNameTextAlign] = useState<TextAlign>(settings?.nameTextAlign ?? DEFAULTS.nameTextAlign);
   const [nameMarginTopIn, setNameMarginTopIn] = useState(settings?.nameMarginTopIn ?? DEFAULTS.nameMarginTopIn);
   const [nameMarginRightIn, setNameMarginRightIn] = useState(settings?.nameMarginRightIn ?? DEFAULTS.nameMarginRightIn);
   const [nameMarginBottomIn, setNameMarginBottomIn] = useState(settings?.nameMarginBottomIn ?? DEFAULTS.nameMarginBottomIn);
@@ -206,6 +232,7 @@ function LabelPrintForm({
 
   const [serialFontFamily, setSerialFontFamily] = useState(settings?.serialFontFamily ?? DEFAULTS.serialFontFamily);
   const [serialFontSizePt, setSerialFontSizePt] = useState(settings?.serialFontSizePt ?? DEFAULTS.serialFontSizePt);
+  const [serialTextAlign, setSerialTextAlign] = useState<TextAlign>(settings?.serialTextAlign ?? DEFAULTS.serialTextAlign);
   const [serialMarginTopIn, setSerialMarginTopIn] = useState(settings?.serialMarginTopIn ?? DEFAULTS.serialMarginTopIn);
   const [serialMarginRightIn, setSerialMarginRightIn] = useState(settings?.serialMarginRightIn ?? DEFAULTS.serialMarginRightIn);
   const [serialMarginBottomIn, setSerialMarginBottomIn] = useState(settings?.serialMarginBottomIn ?? DEFAULTS.serialMarginBottomIn);
@@ -233,18 +260,21 @@ function LabelPrintForm({
     setLayout(d.layout);
     setTagFontFamily(d.tagFontFamily);
     setTagFontSizePt(d.tagFontSizePt);
+    setTagTextAlign(d.tagTextAlign);
     setTagMarginTopIn(d.tagMarginTopIn);
     setTagMarginRightIn(d.tagMarginRightIn);
     setTagMarginBottomIn(d.tagMarginBottomIn);
     setTagMarginLeftIn(d.tagMarginLeftIn);
     setNameFontFamily(d.nameFontFamily);
     setNameFontSizePt(d.nameFontSizePt);
+    setNameTextAlign(d.nameTextAlign);
     setNameMarginTopIn(d.nameMarginTopIn);
     setNameMarginRightIn(d.nameMarginRightIn);
     setNameMarginBottomIn(d.nameMarginBottomIn);
     setNameMarginLeftIn(d.nameMarginLeftIn);
     setSerialFontFamily(d.serialFontFamily);
     setSerialFontSizePt(d.serialFontSizePt);
+    setSerialTextAlign(d.serialTextAlign);
     setSerialMarginTopIn(d.serialMarginTopIn);
     setSerialMarginRightIn(d.serialMarginRightIn);
     setSerialMarginBottomIn(d.serialMarginBottomIn);
@@ -267,18 +297,21 @@ function LabelPrintForm({
       layout,
       tagFontFamily,
       tagFontSizePt: Number(tagFontSizePt),
+      tagTextAlign,
       tagMarginTopIn,
       tagMarginRightIn,
       tagMarginBottomIn,
       tagMarginLeftIn,
       nameFontFamily,
       nameFontSizePt: Number(nameFontSizePt),
+      nameTextAlign,
       nameMarginTopIn,
       nameMarginRightIn,
       nameMarginBottomIn,
       nameMarginLeftIn,
       serialFontFamily,
       serialFontSizePt: Number(serialFontSizePt),
+      serialTextAlign,
       serialMarginTopIn,
       serialMarginRightIn,
       serialMarginBottomIn,
@@ -307,18 +340,21 @@ function LabelPrintForm({
       layout: s.layout,
       tagFontFamily: s.tagFontFamily,
       tagFontSizePt: s.tagFontSizePt,
+      tagTextAlign: s.tagTextAlign,
       tagMarginTopIn: Number(s.tagMarginTopIn),
       tagMarginRightIn: Number(s.tagMarginRightIn),
       tagMarginBottomIn: Number(s.tagMarginBottomIn),
       tagMarginLeftIn: Number(s.tagMarginLeftIn),
       nameFontFamily: s.nameFontFamily,
       nameFontSizePt: s.nameFontSizePt,
+      nameTextAlign: s.nameTextAlign,
       nameMarginTopIn: Number(s.nameMarginTopIn),
       nameMarginRightIn: Number(s.nameMarginRightIn),
       nameMarginBottomIn: Number(s.nameMarginBottomIn),
       nameMarginLeftIn: Number(s.nameMarginLeftIn),
       serialFontFamily: s.serialFontFamily,
       serialFontSizePt: s.serialFontSizePt,
+      serialTextAlign: s.serialTextAlign,
       serialMarginTopIn: Number(s.serialMarginTopIn),
       serialMarginRightIn: Number(s.serialMarginRightIn),
       serialMarginBottomIn: Number(s.serialMarginBottomIn),
@@ -494,6 +530,8 @@ function LabelPrintForm({
           setFontFamily={setTagFontFamily}
           fontSizePt={tagFontSizePt}
           setFontSizePt={setTagFontSizePt}
+          textAlign={tagTextAlign}
+          setTextAlign={setTagTextAlign}
           marginTopIn={tagMarginTopIn}
           setMarginTopIn={setTagMarginTopIn}
           marginRightIn={tagMarginRightIn}
@@ -512,6 +550,8 @@ function LabelPrintForm({
           setFontFamily={setNameFontFamily}
           fontSizePt={nameFontSizePt}
           setFontSizePt={setNameFontSizePt}
+          textAlign={nameTextAlign}
+          setTextAlign={setNameTextAlign}
           marginTopIn={nameMarginTopIn}
           setMarginTopIn={setNameMarginTopIn}
           marginRightIn={nameMarginRightIn}
@@ -530,6 +570,8 @@ function LabelPrintForm({
           setFontFamily={setSerialFontFamily}
           fontSizePt={serialFontSizePt}
           setFontSizePt={setSerialFontSizePt}
+          textAlign={serialTextAlign}
+          setTextAlign={setSerialTextAlign}
           marginTopIn={serialMarginTopIn}
           setMarginTopIn={setSerialMarginTopIn}
           marginRightIn={serialMarginRightIn}
@@ -574,6 +616,7 @@ function LabelPrintForm({
                     style={{
                       fontFamily: tagFontFamily,
                       fontSize: `${tagFontSizePt}pt`,
+                      textAlign: tagTextAlign.toLowerCase() as 'left' | 'center' | 'right' | 'justify',
                       margin: `${tagMarginTopIn}in ${tagMarginRightIn}in ${tagMarginBottomIn}in ${tagMarginLeftIn}in`,
                     }}
                   >
@@ -586,6 +629,7 @@ function LabelPrintForm({
                     style={{
                       fontFamily: nameFontFamily,
                       fontSize: `${nameFontSizePt}pt`,
+                      textAlign: nameTextAlign.toLowerCase() as 'left' | 'center' | 'right' | 'justify',
                       margin: `${nameMarginTopIn}in ${nameMarginRightIn}in ${nameMarginBottomIn}in ${nameMarginLeftIn}in`,
                     }}
                   >
@@ -598,6 +642,7 @@ function LabelPrintForm({
                     style={{
                       fontFamily: serialFontFamily,
                       fontSize: `${serialFontSizePt}pt`,
+                      textAlign: serialTextAlign.toLowerCase() as 'left' | 'center' | 'right' | 'justify',
                       margin: `${serialMarginTopIn}in ${serialMarginRightIn}in ${serialMarginBottomIn}in ${serialMarginLeftIn}in`,
                     }}
                   >

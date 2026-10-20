@@ -14,22 +14,32 @@ export const DEFAULT_CONDITION_SETTINGS: ConditionPrintSettingsRecord = {
   layout: 'SIDE_BY_SIDE',
   tagFontFamily: 'Arial, Helvetica, sans-serif',
   tagFontSizePt: 10,
+  tagTextAlign: 'CENTER',
   tagMarginTopIn: '0',
   tagMarginRightIn: '0',
   tagMarginBottomIn: '0',
   tagMarginLeftIn: '0',
   conditionFontFamily: 'Arial, Helvetica, sans-serif',
   conditionFontSizePt: 9,
+  conditionTextAlign: 'CENTER',
   conditionMarginTopIn: '0',
   conditionMarginRightIn: '0',
   conditionMarginBottomIn: '0',
   conditionMarginLeftIn: '0',
   noteFontFamily: 'Arial, Helvetica, sans-serif',
   noteFontSizePt: 8,
+  noteTextAlign: 'CENTER',
   noteMarginTopIn: '0',
   noteMarginRightIn: '0',
   noteMarginBottomIn: '0',
   noteMarginLeftIn: '0',
+};
+
+const TEXT_ALIGN_CSS: Record<string, string> = {
+  LEFT: 'left',
+  CENTER: 'center',
+  RIGHT: 'right',
+  JUSTIFY: 'justify',
 };
 
 function fieldCss(settings: ConditionPrintSettingsRecord, field: 'tag' | 'condition' | 'note'): string {
@@ -38,6 +48,7 @@ function fieldCss(settings: ConditionPrintSettingsRecord, field: 'tag' | 'condit
       ? {
           fontFamily: settings.tagFontFamily,
           fontSizePt: settings.tagFontSizePt,
+          textAlign: settings.tagTextAlign,
           top: settings.tagMarginTopIn,
           right: settings.tagMarginRightIn,
           bottom: settings.tagMarginBottomIn,
@@ -47,6 +58,7 @@ function fieldCss(settings: ConditionPrintSettingsRecord, field: 'tag' | 'condit
         ? {
             fontFamily: settings.conditionFontFamily,
             fontSizePt: settings.conditionFontSizePt,
+            textAlign: settings.conditionTextAlign,
             top: settings.conditionMarginTopIn,
             right: settings.conditionMarginRightIn,
             bottom: settings.conditionMarginBottomIn,
@@ -55,6 +67,7 @@ function fieldCss(settings: ConditionPrintSettingsRecord, field: 'tag' | 'condit
         : {
             fontFamily: settings.noteFontFamily,
             fontSizePt: settings.noteFontSizePt,
+            textAlign: settings.noteTextAlign,
             top: settings.noteMarginTopIn,
             right: settings.noteMarginRightIn,
             bottom: settings.noteMarginBottomIn,
@@ -64,7 +77,8 @@ function fieldCss(settings: ConditionPrintSettingsRecord, field: 'tag' | 'condit
   const right = Number(style.right) || 0;
   const bottom = Number(style.bottom) || 0;
   const left = Number(style.left) || 0;
-  return `font-family:${style.fontFamily};font-size:${style.fontSizePt}pt;margin:${top}in ${right}in ${bottom}in ${left}in;`;
+  const textAlign = TEXT_ALIGN_CSS[style.textAlign] ?? 'center';
+  return `font-family:${style.fontFamily};font-size:${style.fontSizePt}pt;text-align:${textAlign};margin:${top}in ${right}in ${bottom}in ${left}in;`;
 }
 
 function escapeHtml(value: string): string {

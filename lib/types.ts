@@ -215,6 +215,7 @@ export interface DepreciationResult {
 
 export type LabelOrientation = 'PORTRAIT' | 'LANDSCAPE';
 export type LabelLayout = 'SIDE_BY_SIDE' | 'STACKED';
+export type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFY';
 
 export interface LabelPrintSettingsRecord {
   widthIn: string;
@@ -231,18 +232,21 @@ export interface LabelPrintSettingsRecord {
   layout: LabelLayout;
   tagFontFamily: string;
   tagFontSizePt: number;
+  tagTextAlign: TextAlign;
   tagMarginTopIn: string;
   tagMarginRightIn: string;
   tagMarginBottomIn: string;
   tagMarginLeftIn: string;
   nameFontFamily: string;
   nameFontSizePt: number;
+  nameTextAlign: TextAlign;
   nameMarginTopIn: string;
   nameMarginRightIn: string;
   nameMarginBottomIn: string;
   nameMarginLeftIn: string;
   serialFontFamily: string;
   serialFontSizePt: number;
+  serialTextAlign: TextAlign;
   serialMarginTopIn: string;
   serialMarginRightIn: string;
   serialMarginBottomIn: string;
@@ -263,18 +267,21 @@ export interface ConditionPrintSettingsRecord {
   layout: LabelLayout;
   tagFontFamily: string;
   tagFontSizePt: number;
+  tagTextAlign: TextAlign;
   tagMarginTopIn: string;
   tagMarginRightIn: string;
   tagMarginBottomIn: string;
   tagMarginLeftIn: string;
   conditionFontFamily: string;
   conditionFontSizePt: number;
+  conditionTextAlign: TextAlign;
   conditionMarginTopIn: string;
   conditionMarginRightIn: string;
   conditionMarginBottomIn: string;
   conditionMarginLeftIn: string;
   noteFontFamily: string;
   noteFontSizePt: number;
+  noteTextAlign: TextAlign;
   noteMarginTopIn: string;
   noteMarginRightIn: string;
   noteMarginBottomIn: string;

@@ -16,22 +16,32 @@ export const DEFAULT_LABEL_SETTINGS: LabelPrintSettingsRecord = {
   layout: 'SIDE_BY_SIDE',
   tagFontFamily: 'Arial, Helvetica, sans-serif',
   tagFontSizePt: 10,
+  tagTextAlign: 'CENTER',
   tagMarginTopIn: '0',
   tagMarginRightIn: '0',
   tagMarginBottomIn: '0',
   tagMarginLeftIn: '0',
   nameFontFamily: 'Arial, Helvetica, sans-serif',
   nameFontSizePt: 9,
+  nameTextAlign: 'CENTER',
   nameMarginTopIn: '0',
   nameMarginRightIn: '0',
   nameMarginBottomIn: '0',
   nameMarginLeftIn: '0',
   serialFontFamily: 'Arial, Helvetica, sans-serif',
   serialFontSizePt: 8,
+  serialTextAlign: 'CENTER',
   serialMarginTopIn: '0',
   serialMarginRightIn: '0',
   serialMarginBottomIn: '0',
   serialMarginLeftIn: '0',
+};
+
+const TEXT_ALIGN_CSS: Record<string, string> = {
+  LEFT: 'left',
+  CENTER: 'center',
+  RIGHT: 'right',
+  JUSTIFY: 'justify',
 };
 
 function fieldCss(settings: LabelPrintSettingsRecord, field: 'tag' | 'name' | 'serial'): string {
@@ -40,6 +50,7 @@ function fieldCss(settings: LabelPrintSettingsRecord, field: 'tag' | 'name' | 's
       ? {
           fontFamily: settings.tagFontFamily,
           fontSizePt: settings.tagFontSizePt,
+          textAlign: settings.tagTextAlign,
           top: settings.tagMarginTopIn,
           right: settings.tagMarginRightIn,
           bottom: settings.tagMarginBottomIn,
@@ -49,6 +60,7 @@ function fieldCss(settings: LabelPrintSettingsRecord, field: 'tag' | 'name' | 's
         ? {
             fontFamily: settings.nameFontFamily,
             fontSizePt: settings.nameFontSizePt,
+            textAlign: settings.nameTextAlign,
             top: settings.nameMarginTopIn,
             right: settings.nameMarginRightIn,
             bottom: settings.nameMarginBottomIn,
@@ -57,6 +69,7 @@ function fieldCss(settings: LabelPrintSettingsRecord, field: 'tag' | 'name' | 's
         : {
             fontFamily: settings.serialFontFamily,
             fontSizePt: settings.serialFontSizePt,
+            textAlign: settings.serialTextAlign,
             top: settings.serialMarginTopIn,
             right: settings.serialMarginRightIn,
             bottom: settings.serialMarginBottomIn,
@@ -66,7 +79,8 @@ function fieldCss(settings: LabelPrintSettingsRecord, field: 'tag' | 'name' | 's
   const right = Number(style.right) || 0;
   const bottom = Number(style.bottom) || 0;
   const left = Number(style.left) || 0;
-  return `font-family:${style.fontFamily};font-size:${style.fontSizePt}pt;margin:${top}in ${right}in ${bottom}in ${left}in;`;
+  const textAlign = TEXT_ALIGN_CSS[style.textAlign] ?? 'center';
+  return `font-family:${style.fontFamily};font-size:${style.fontSizePt}pt;text-align:${textAlign};margin:${top}in ${right}in ${bottom}in ${left}in;`;
 }
 
 function escapeHtml(value: string): string {
