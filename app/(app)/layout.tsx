@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { Sidebar } from '@/components/layout/sidebar';
@@ -11,20 +11,29 @@ import { ConfirmProvider } from '@/components/ui/confirm-dialog';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.replace('/login');
     else if (!loading && user?.mustChangePassword) router.replace('/change-password');
   }, [loading, user, router]);
 
+  // Prevents the page behind the off-canvas mobile menu from scrolling while it's open.
+  useEffect(() => {
+    document.body.style.overflow = mobileNavOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileNavOpen]);
+
   if (loading || !user || user.mustChangePassword) return <PageLoading />;
 
   return (
     <ConfirmProvider>
       <div className="flex min-h-screen">
-        <Sidebar />
+        <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
         <div className="flex min-h-screen flex-1 flex-col">
-          <Topbar />
+          <Topbar onMenuClick={() => setMobileNavOpen((v) => !v)} />
           <main className="flex-1 bg-cream p-4 md:p-6">{children}</main>
         </div>
       </div>
