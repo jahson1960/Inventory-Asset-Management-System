@@ -1,26 +1,21 @@
-import type { LabelOrientation, TextAlign } from './types';
+import type { CustomPrintSettingsRecord } from './types';
 
-/** The subset of fields a print template needs to lay out a single block of free text — both
- *  LabelPrintSettingsRecord and ConditionPrintSettingsRecord already share these exact field
- *  names (page geometry plus the "tag" field's typography, since tag is the one field every
- *  template has in common and is styled as the primary/bold field), so either settings record
- *  can be passed here directly with no conversion. */
-export interface CustomPrintPageSettings {
-  widthIn: string;
-  heightIn: string;
-  orientation: LabelOrientation;
-  marginTopIn: string;
-  marginRightIn: string;
-  marginBottomIn: string;
-  marginLeftIn: string;
-  tagFontFamily: string;
-  tagFontSizePt: number;
-  tagTextAlign: TextAlign;
-  tagMarginTopIn: string;
-  tagMarginRightIn: string;
-  tagMarginBottomIn: string;
-  tagMarginLeftIn: string;
-}
+export const DEFAULT_CUSTOM_PRINT_SETTINGS: CustomPrintSettingsRecord = {
+  widthIn: '2',
+  heightIn: '1',
+  orientation: 'PORTRAIT',
+  marginTopIn: '0',
+  marginRightIn: '0',
+  marginBottomIn: '0',
+  marginLeftIn: '0',
+  fontFamily: 'Arial, Helvetica, sans-serif',
+  fontSizePt: 10,
+  textAlign: 'CENTER',
+  textMarginTopIn: '0',
+  textMarginRightIn: '0',
+  textMarginBottomIn: '0',
+  textMarginLeftIn: '0',
+};
 
 const TEXT_ALIGN_CSS: Record<string, string> = {
   LEFT: 'left',
@@ -29,17 +24,50 @@ const TEXT_ALIGN_CSS: Record<string, string> = {
   JUSTIFY: 'justify',
 };
 
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
+const ALLOWED_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'BR', 'DIV', 'SPAN', 'P', 'UL', 'OL', 'LI']);
+
+function sanitizeNode(node: Node) {
+  for (const child of Array.from(node.childNodes)) {
+    if (child.nodeType === Node.TEXT_NODE) continue;
+    if (child.nodeType !== Node.ELEMENT_NODE) {
+      node.removeChild(child);
+      continue;
+    }
+    const el = child as HTMLElement;
+    if (!ALLOWED_TAGS.has(el.tagName)) {
+      // Drop the tag but keep its contents (e.g. a pasted <font> or <a> wrapper) — a <script>/
+      // <style> has its text content dropped too, since nothing useful survives unwrapping those.
+      if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
+        while (el.firstChild) node.insertBefore(el.firstChild, el);
+      }
+      node.removeChild(el);
+      continue;
+    }
+    while (el.attributes.length > 0) el.removeAttribute(el.attributes[0].name);
+    sanitizeNode(el);
+  }
 }
 
-/** Opens a dedicated print window for an arbitrary block of free text, sized to the chosen
- *  template's paper size/margins/orientation and styled with that template's "tag" field font —
- *  used for anything that isn't an asset tag or a condition but should still come out of one of
- *  the two existing printers (e.g. a one-off note, a location label). Independent from
- *  printAssetLabel/printAssetCondition: this has no concept of included fields or layout, it's
- *  always exactly one block of text. */
-export function printCustomText({ settings, text }: { settings: CustomPrintPageSettings; text: string }) {
+/** Strips everything except plain structure/formatting tags from rich-text editor output before
+ *  it's embedded in the print window's document.write() — this content never leaves the typing
+ *  user's own browser (not stored, not shared with anyone else), so the risk this guards against
+ *  is low, but it costs little to keep the print window from ever executing injected markup. Runs
+ *  the pass twice: unwrapping a disallowed element exposes its children as new siblings that the
+ *  first pass's node snapshot won't revisit, so a second pass catches those (a no-op on content
+ *  that was already clean). */
+export function sanitizeRichText(html: string): string {
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  sanitizeNode(template.content);
+  sanitizeNode(template.content);
+  return template.innerHTML;
+}
+
+/** Opens a dedicated print window for a rich-text note (bold/italic/underline preserved), sized
+ *  to the Custom Print template's own paper size/margins/orientation and base font/alignment —
+ *  used for the "Custom Print" button on the Asset Register page, for anything that isn't an
+ *  asset tag or a condition. Independent from printAssetLabel/printAssetCondition. */
+export function printCustomText({ settings, html }: { settings: CustomPrintSettingsRecord; html: string }) {
   const width = Number(settings.widthIn) || 2;
   const height = Number(settings.heightIn) || 1;
   const rotated = settings.orientation === 'LANDSCAPE';
@@ -54,11 +82,12 @@ export function printCustomText({ settings, text }: { settings: CustomPrintPageS
   const boxWidthIn = rotated ? printableHeightIn : printableWidthIn;
   const boxHeightIn = rotated ? printableWidthIn : printableHeightIn;
 
-  const textAlign = TEXT_ALIGN_CSS[settings.tagTextAlign] ?? 'center';
-  const fieldMarginTop = Number(settings.tagMarginTopIn) || 0;
-  const fieldMarginRight = Number(settings.tagMarginRightIn) || 0;
-  const fieldMarginBottom = Number(settings.tagMarginBottomIn) || 0;
-  const fieldMarginLeft = Number(settings.tagMarginLeftIn) || 0;
+  const textAlign = TEXT_ALIGN_CSS[settings.textAlign] ?? 'center';
+  const textMarginTop = Number(settings.textMarginTopIn) || 0;
+  const textMarginRight = Number(settings.textMarginRightIn) || 0;
+  const textMarginBottom = Number(settings.textMarginBottomIn) || 0;
+  const textMarginLeft = Number(settings.textMarginLeftIn) || 0;
+  const safeHtml = sanitizeRichText(html);
 
   const win = window.open('', '_blank', 'width=400,height=300');
   if (!win) return;
@@ -90,19 +119,18 @@ export function printCustomText({ settings, text }: { settings: CustomPrintPageS
   }
   .text {
     width: 100%;
-    font-family: ${settings.tagFontFamily};
-    font-size: ${settings.tagFontSizePt}pt;
+    font-family: ${settings.fontFamily};
+    font-size: ${settings.fontSizePt}pt;
     text-align: ${textAlign};
-    white-space: pre-wrap;
     overflow-wrap: break-word;
     line-height: 1.3;
-    margin: ${fieldMarginTop}in ${fieldMarginRight}in ${fieldMarginBottom}in ${fieldMarginLeft}in;
+    margin: ${textMarginTop}in ${textMarginRight}in ${textMarginBottom}in ${textMarginLeft}in;
   }
 </style>
 </head>
 <body>
   <div class="label">
-    <div class="text">${escapeHtml(text)}</div>
+    <div class="text">${safeHtml}</div>
   </div>
 </body>
 </html>`);

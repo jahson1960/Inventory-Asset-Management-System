@@ -6,7 +6,6 @@ import { useApi } from '@/hooks/use-api';
 import { api, ApiError, fetchAuthenticatedObjectUrl, fileUrl, uploadFile } from '@/lib/api-client';
 import { DEFAULT_LABEL_SETTINGS, printAssetLabel } from '@/lib/label-print';
 import { DEFAULT_CONDITION_SETTINGS, printAssetCondition } from '@/lib/condition-print';
-import { printCustomText } from '@/lib/custom-print';
 import type { Asset, AssetAssignment, AssetStatus, ConditionPrintSettingsRecord, CurrentUser, DisplaySettingsRecord, LabelPrintSettingsRecord, MaintenanceRequestRecord, Paginated, Technician } from '@/lib/types';
 import { statusTone, type BadgeTone } from '@/lib/status-tone';
 import { cn } from '@/lib/cn';
@@ -387,7 +386,6 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
           settings={conditionPrintSettings}
         />
         <DepreciationCard asset={asset} />
-        <CustomPrintCard labelSettings={labelSettings} conditionSettings={conditionPrintSettings} />
       </div>
 
       <AssignModal
@@ -679,81 +677,6 @@ function ConditionLabelCard({
           </Button>
         </div>
       </CardBody>
-    </Card>
-  );
-}
-
-function CustomPrintCard({
-  labelSettings,
-  conditionSettings,
-}: {
-  labelSettings?: LabelPrintSettingsRecord;
-  conditionSettings?: ConditionPrintSettingsRecord;
-}) {
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState('');
-  const [template, setTemplate] = useState<'LABEL' | 'CONDITION'>('LABEL');
-  const [printing, setPrinting] = useState(false);
-
-  function onPrint() {
-    if (!text.trim()) return;
-    setPrinting(true);
-    try {
-      const settings = template === 'LABEL' ? (labelSettings ?? DEFAULT_LABEL_SETTINGS) : (conditionSettings ?? DEFAULT_CONDITION_SETTINGS);
-      printCustomText({ settings, text: text.trim() });
-      setOpen(false);
-    } finally {
-      setPrinting(false);
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader className="flex items-center gap-2">
-        <FileTextIcon className="h-4 w-4 text-slate-400" />
-        Custom Print
-      </CardHeader>
-      <CardBody>
-        <p className="text-xs text-slate-500">
-          Print any free text on a label, using the paper size and styling from either the Label or Condition print
-          template.
-        </p>
-        <div className="mt-3">
-          <Button variant="secondary" size="sm" onClick={() => setOpen(true)} className="w-full">
-            <PrinterIcon className="h-4 w-4" />
-            Print Custom Note
-          </Button>
-        </div>
-      </CardBody>
-      <Modal open={open} onClose={() => setOpen(false)} title="Print Custom Note">
-        <Field>
-          <Label htmlFor="custom-print-text" required>
-            Text
-          </Label>
-          <Textarea
-            id="custom-print-text"
-            rows={4}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Type what you want printed…"
-          />
-        </Field>
-        <Field>
-          <Label htmlFor="custom-print-template">Template</Label>
-          <Select id="custom-print-template" value={template} onChange={(e) => setTemplate(e.target.value as 'LABEL' | 'CONDITION')}>
-            <option value="LABEL">Label Printing settings</option>
-            <option value="CONDITION">Condition Printing settings</option>
-          </Select>
-        </Field>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button type="button" variant="secondary" size="sm" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button type="button" size="sm" onClick={onPrint} disabled={!text.trim() || printing}>
-            {printing ? 'Preparing…' : 'Print'}
-          </Button>
-        </div>
-      </Modal>
     </Card>
   );
 }

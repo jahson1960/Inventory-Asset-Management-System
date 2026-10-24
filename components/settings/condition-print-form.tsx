@@ -1,25 +1,14 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useApi } from '@/hooks/use-api';
 import { api, ApiError } from '@/lib/api-client';
 import { printAssetCondition } from '@/lib/condition-print';
 import type { ConditionPrintSettingsRecord, LabelOrientation, LabelLayout, TextAlign } from '@/lib/types';
-import { PageHeader } from '@/components/ui/page-header';
-import { Card, CardBody } from '@/components/ui/card';
 import { Field, Label, Select, Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/ui/alert';
-import { PageLoading } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
-
-const FONT_OPTIONS = [
-  'Arial, Helvetica, sans-serif',
-  'Verdana, Geneva, sans-serif',
-  'Georgia, "Times New Roman", serif',
-  '"Courier New", Courier, monospace',
-  'Tahoma, Geneva, sans-serif',
-];
+import { FieldStyleFields, FONT_OPTIONS } from './field-style-fields';
 
 const DEFAULTS: ConditionPrintSettingsRecord = {
   widthIn: '2',
@@ -56,136 +45,11 @@ const DEFAULTS: ConditionPrintSettingsRecord = {
   noteMarginLeftIn: '0',
 };
 
-const TEXT_ALIGN_OPTIONS: { value: TextAlign; label: string }[] = [
-  { value: 'LEFT', label: 'Left' },
-  { value: 'CENTER', label: 'Center' },
-  { value: 'RIGHT', label: 'Right' },
-  { value: 'JUSTIFY', label: 'Justify' },
-];
-
 const SAMPLE_TAG = 'AST-00123';
 const SAMPLE_CONDITION = 'DAMAGED';
 const SAMPLE_NOTE = 'Screen cracked, bottom-right corner';
 
-export default function ConditionPrintSettingsPage() {
-  const { data: settings, loading, refetch } = useApi<ConditionPrintSettingsRecord>('/settings/condition-print');
-
-  if (loading) return <PageLoading />;
-
-  return (
-    <div className="max-w-2xl">
-      <PageHeader
-        title="Condition Printing"
-        description="Set the paper size, margins, which fields appear, and each field's own font, size and spacing, used when printing an asset's condition from the asset detail page."
-      />
-      <Card>
-        <CardBody>
-          <ConditionPrintForm key={settings ? 'loaded' : 'loading'} settings={settings} onSaved={refetch} />
-        </CardBody>
-      </Card>
-    </div>
-  );
-}
-
-/** One field's font + margin controls — reused for asset tag, condition and condition note so
- *  each can be styled independently instead of sharing one label-wide font. */
-function FieldStyleFields({
-  title,
-  fontFamily,
-  setFontFamily,
-  fontSizePt,
-  setFontSizePt,
-  textAlign,
-  setTextAlign,
-  marginTopIn,
-  setMarginTopIn,
-  marginRightIn,
-  setMarginRightIn,
-  marginBottomIn,
-  setMarginBottomIn,
-  marginLeftIn,
-  setMarginLeftIn,
-  idPrefix,
-}: {
-  title: string;
-  fontFamily: string;
-  setFontFamily: (v: string) => void;
-  fontSizePt: number;
-  setFontSizePt: (v: number) => void;
-  textAlign: TextAlign;
-  setTextAlign: (v: TextAlign) => void;
-  marginTopIn: string;
-  setMarginTopIn: (v: string) => void;
-  marginRightIn: string;
-  setMarginRightIn: (v: string) => void;
-  marginBottomIn: string;
-  setMarginBottomIn: (v: string) => void;
-  marginLeftIn: string;
-  setMarginLeftIn: (v: string) => void;
-  idPrefix: string;
-}) {
-  return (
-    <div className="mb-3 rounded-lg border border-slate-200 p-3">
-      <p className="mb-2 text-xs font-semibold text-slate-700">{title}</p>
-      <div className="grid grid-cols-2 gap-3">
-        <Field>
-          <Label htmlFor={`${idPrefix}-font`}>Font</Label>
-          <Select id={`${idPrefix}-font`} value={fontFamily} onChange={(e) => setFontFamily(e.target.value)}>
-            {FONT_OPTIONS.map((f) => (
-              <option key={f} value={f}>
-                {f.split(',')[0].replace(/"/g, '')}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field>
-          <Label htmlFor={`${idPrefix}-size`} required>Font size (pt)</Label>
-          <Input
-            id={`${idPrefix}-size`}
-            type="number"
-            step="1"
-            min="4"
-            max="72"
-            required
-            value={fontSizePt}
-            onChange={(e) => setFontSizePt(Number(e.target.value))}
-          />
-        </Field>
-      </div>
-      <Field>
-        <Label htmlFor={`${idPrefix}-align`}>Alignment</Label>
-        <Select id={`${idPrefix}-align`} value={textAlign} onChange={(e) => setTextAlign(e.target.value as TextAlign)}>
-          {TEXT_ALIGN_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <p className="mb-1.5 mt-2 text-xs text-slate-500">Margin (inches)</p>
-      <div className="grid grid-cols-4 gap-2">
-        <Field>
-          <Label htmlFor={`${idPrefix}-mt`}>Top</Label>
-          <Input id={`${idPrefix}-mt`} type="number" step="0.05" min="0" max="2" value={marginTopIn} onChange={(e) => setMarginTopIn(e.target.value)} />
-        </Field>
-        <Field>
-          <Label htmlFor={`${idPrefix}-mr`}>Right</Label>
-          <Input id={`${idPrefix}-mr`} type="number" step="0.05" min="0" max="2" value={marginRightIn} onChange={(e) => setMarginRightIn(e.target.value)} />
-        </Field>
-        <Field>
-          <Label htmlFor={`${idPrefix}-mb`}>Bottom</Label>
-          <Input id={`${idPrefix}-mb`} type="number" step="0.05" min="0" max="2" value={marginBottomIn} onChange={(e) => setMarginBottomIn(e.target.value)} />
-        </Field>
-        <Field>
-          <Label htmlFor={`${idPrefix}-ml`}>Left</Label>
-          <Input id={`${idPrefix}-ml`} type="number" step="0.05" min="0" max="2" value={marginLeftIn} onChange={(e) => setMarginLeftIn(e.target.value)} />
-        </Field>
-      </div>
-    </div>
-  );
-}
-
-function ConditionPrintForm({ settings, onSaved }: { settings?: ConditionPrintSettingsRecord; onSaved: () => void }) {
+export function ConditionPrintForm({ settings, onSaved }: { settings?: ConditionPrintSettingsRecord; onSaved: () => void }) {
   const [widthIn, setWidthIn] = useState(settings?.widthIn ?? DEFAULTS.widthIn);
   const [heightIn, setHeightIn] = useState(settings?.heightIn ?? DEFAULTS.heightIn);
   const [orientation, setOrientation] = useState<LabelOrientation>(settings?.orientation ?? DEFAULTS.orientation);

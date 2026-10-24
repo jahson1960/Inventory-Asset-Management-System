@@ -288,6 +288,23 @@ export interface ConditionPrintSettingsRecord {
   noteMarginLeftIn: string;
 }
 
+export interface CustomPrintSettingsRecord {
+  widthIn: string;
+  heightIn: string;
+  orientation: LabelOrientation;
+  marginTopIn: string;
+  marginRightIn: string;
+  marginBottomIn: string;
+  marginLeftIn: string;
+  fontFamily: string;
+  fontSizePt: number;
+  textAlign: TextAlign;
+  textMarginTopIn: string;
+  textMarginRightIn: string;
+  textMarginBottomIn: string;
+  textMarginLeftIn: string;
+}
+
 export interface AssetValuationItem {
   assetId: string;
   assetTag: string;
