@@ -12,10 +12,12 @@ import { brandLogoUrl } from '@/lib/theme';
 import { PageLoading } from '@/components/ui/spinner';
 
 export default function ChangePasswordPage() {
-  const { user, loading, changePassword, logout, theme } = useAuth();
+  const { user, loading, changePassword, logout, theme, tempPassword, clearTempPassword } = useAuth();
   const logoUrl = brandLogoUrl(theme.logoUrl);
   const router = useRouter();
-  const [currentPassword, setCurrentPassword] = useState('');
+  // Pre-filled from the password just used to log in, when that login forced a redirect here —
+  // the user only has to type and confirm a new one. Falls back to blank for a direct visit.
+  const [currentPassword, setCurrentPassword] = useState(tempPassword ?? '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +26,13 @@ export default function ChangePasswordPage() {
   useEffect(() => {
     if (!loading && !user) router.replace('/login');
   }, [loading, user, router]);
+
+  useEffect(() => {
+    if (tempPassword) clearTempPassword();
+    // Only ever needs to run once, right after mount, to consume the value this page was
+    // handed — not on every tempPassword/clearTempPassword identity change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading || !user) return <PageLoading />;
 

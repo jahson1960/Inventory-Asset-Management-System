@@ -13,6 +13,12 @@ interface AuthContextValue {
   permissions: PermissionRules;
   permissionsLoaded: boolean;
   theme: ThemeSettingsRecord;
+  /** The password just used to log in, held in memory only when it forced a redirect to
+   *  Change Password — lets that page pre-fill the temporary password instead of asking the
+   *  user to retype what they just typed. Consumers should call clearTempPassword() once
+   *  they've read it. */
+  tempPassword: string | null;
+  clearTempPassword: () => void;
   login: (email: string, password: string) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   logout: () => void;
@@ -28,7 +34,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<PermissionRules>({});
   const [permissionsLoaded, setPermissionsLoaded] = useState(false);
   const [theme, setTheme] = useState<ThemeSettingsRecord>(DEFAULT_THEME);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
   const router = useRouter();
+
+  const clearTempPassword = useCallback(() => setTempPassword(null), []);
 
   const refreshPermissions = useCallback(async () => {
     try {
@@ -92,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setToken(result.accessToken);
       setUser(result.user);
       if (result.user.mustChangePassword) {
+        setTempPassword(password);
         router.push('/change-password');
         return;
       }
@@ -105,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (currentPassword: string, newPassword: string) => {
       await api.patch('/auth/change-password', { currentPassword, newPassword });
       setUser((prev) => (prev ? { ...prev, mustChangePassword: false } : prev));
+      setTempPassword(null);
       await refreshPermissions();
       router.push('/dashboard');
     },
@@ -116,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setPermissions({});
     setPermissionsLoaded(false);
+    setTempPassword(null);
     router.push('/login');
   }, [router]);
 
@@ -127,6 +139,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         permissions,
         permissionsLoaded,
         theme,
+        tempPassword,
+        clearTempPassword,
         login,
         changePassword,
         logout,
