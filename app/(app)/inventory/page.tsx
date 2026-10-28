@@ -9,6 +9,8 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { useDepartmentOptions, useUserOptions } from '@/hooks/use-filter-options';
 import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
 import { RequirePermission } from '@/components/require-permission';
@@ -19,9 +21,17 @@ import { Pagination } from '@/components/ui/pagination';
 
 export default function InventoryItemsPage() {
   const [search, setSearch] = useState('');
+  const [departmentId, setDepartmentId] = useState('');
+  const [requestedById, setRequestedById] = useState('');
   const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
   const pageSize = displaySettings?.pageSize ?? 25;
-  const { items, total, page, setPage, totalPages, loading, error } = usePaginatedApi<InventoryItem>('/inventory-items', pageSize, { search: search || undefined });
+  const departmentOptions = useDepartmentOptions();
+  const userOptions = useUserOptions();
+  const { items, total, page, setPage, totalPages, loading, error } = usePaginatedApi<InventoryItem>('/inventory-items', pageSize, {
+    search: search || undefined,
+    departmentId: departmentId || undefined,
+    requestedById: requestedById || undefined,
+  });
   const adminDefault = displaySettings?.cardViewLists.includes('inventory') ? 'CARD' : 'TABLE';
   const [mode, setMode] = useListViewMode('inventory', adminDefault);
 
@@ -42,11 +52,27 @@ export default function InventoryItemsPage() {
         }
       />
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap gap-2">
         <Input
           placeholder="Search item code, name, barcode…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+        <SearchableSelect
+          value={departmentId}
+          onChange={setDepartmentId}
+          options={departmentOptions}
+          placeholder="All departments"
+          searchPlaceholder="Search departments…"
+          className="max-w-xs"
+        />
+        <SearchableSelect
+          value={requestedById}
+          onChange={setRequestedById}
+          options={userOptions}
+          placeholder="All recipients"
+          searchPlaceholder="Search people…"
           className="max-w-xs"
         />
       </div>

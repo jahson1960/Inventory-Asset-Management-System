@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import type { InventoryIssuance } from '@/lib/types';
@@ -8,12 +9,21 @@ import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { useDepartmentOptions, useUserOptions } from '@/hooks/use-filter-options';
 import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
 import { RequirePermission } from '@/components/require-permission';
 
 export default function IssuancePage() {
-  const { data: issuances, loading, error } = useApi<InventoryIssuance[]>('/issuance');
+  const [departmentId, setDepartmentId] = useState('');
+  const [requestedById, setRequestedById] = useState('');
+  const departmentOptions = useDepartmentOptions();
+  const userOptions = useUserOptions();
+  const { data: issuances, loading, error } = useApi<InventoryIssuance[]>('/issuance', {
+    departmentId: departmentId || undefined,
+    requestedById: requestedById || undefined,
+  });
 
   return (
     <div>
@@ -28,6 +38,25 @@ export default function IssuancePage() {
           </RequirePermission>
         }
       />
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        <SearchableSelect
+          value={departmentId}
+          onChange={setDepartmentId}
+          options={departmentOptions}
+          placeholder="All departments"
+          searchPlaceholder="Search departments…"
+          className="max-w-xs"
+        />
+        <SearchableSelect
+          value={requestedById}
+          onChange={setRequestedById}
+          options={userOptions}
+          placeholder="All recipients"
+          searchPlaceholder="Search people…"
+          className="max-w-xs"
+        />
+      </div>
 
       <Card>
         {loading ? (

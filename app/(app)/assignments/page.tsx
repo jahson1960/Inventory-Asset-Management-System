@@ -11,6 +11,8 @@ import { ASSIGNMENT_STATUS_LABELS, ASSIGNMENT_STATUS_TONE } from '@/lib/assignme
 import { PageHeader } from '@/components/ui/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Select } from '@/components/ui/input';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { useDepartmentOptions, useUserOptions } from '@/hooks/use-filter-options';
 import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
 import { RequirePermission } from '@/components/require-permission';
@@ -30,10 +32,14 @@ const STATUS_FILTERS = [
 export default function AssignmentsPage() {
   const { user } = useAuth();
   const [status, setStatus] = useState<string>('active');
+  const [departmentId, setDepartmentId] = useState('');
+  const [staffId, setStaffId] = useState('');
   const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
   const pageSize = displaySettings?.pageSize ?? 25;
   const adminDefault = displaySettings?.cardViewLists.includes('assignments') ? 'CARD' : 'TABLE';
   const [mode, setMode] = useListViewMode('assignments', adminDefault);
+  const departmentOptions = useDepartmentOptions();
+  const userOptions = useUserOptions();
   const {
     items: assignments,
     total,
@@ -46,6 +52,8 @@ export default function AssignmentsPage() {
   } = usePaginatedApi<AssetAssignment>('/assignments', pageSize, {
     status: status === 'active' || status === '' ? undefined : status,
     excludeReturned: status === 'active' ? true : undefined,
+    departmentId: departmentId || undefined,
+    staffId: staffId || undefined,
   });
   const [actionError, setActionError] = useState<string | null>(null);
   const confirm = useConfirm();
@@ -132,7 +140,7 @@ export default function AssignmentsPage() {
         action={<ViewModeToggle mode={mode} onChange={setMode} />}
       />
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap gap-2">
         <Select value={status} onChange={(e) => setStatus(e.target.value)} className="max-w-xs">
           {STATUS_FILTERS.map((f) => (
             <option key={f.value} value={f.value}>
@@ -140,6 +148,22 @@ export default function AssignmentsPage() {
             </option>
           ))}
         </Select>
+        <SearchableSelect
+          value={departmentId}
+          onChange={setDepartmentId}
+          options={departmentOptions}
+          placeholder="All departments"
+          searchPlaceholder="Search departments…"
+          className="max-w-xs"
+        />
+        <SearchableSelect
+          value={staffId}
+          onChange={setStaffId}
+          options={userOptions}
+          placeholder="All staff"
+          searchPlaceholder="Search people…"
+          className="max-w-xs"
+        />
       </div>
 
       {actionError && <ErrorAlert message={actionError} />}

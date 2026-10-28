@@ -11,6 +11,8 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input, Select } from '@/components/ui/input';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { useDepartmentOptions, useUserOptions } from '@/hooks/use-filter-options';
 import { Modal } from '@/components/ui/modal';
 import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
@@ -33,12 +35,18 @@ const STATUS_TONE: Record<AssetStatus, 'green' | 'blue' | 'amber' | 'neutral' | 
 export default function AssetsPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [departmentId, setDepartmentId] = useState('');
+  const [custodianId, setCustodianId] = useState('');
   const [customPrintOpen, setCustomPrintOpen] = useState(false);
   const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
   const pageSize = displaySettings?.pageSize ?? 25;
+  const departmentOptions = useDepartmentOptions();
+  const userOptions = useUserOptions();
   const { items: assets, total, page, setPage, totalPages, loading, error } = usePaginatedApi<Asset>('/assets', pageSize, {
     search: search || undefined,
     status: status || undefined,
+    departmentId: departmentId || undefined,
+    custodianId: custodianId || undefined,
   });
   const adminDefault = displaySettings?.cardViewLists.includes('assets') ? 'CARD' : 'TABLE';
   const [mode, setMode] = useListViewMode('assets', adminDefault);
@@ -81,6 +89,22 @@ export default function AssetsPage() {
             </option>
           ))}
         </Select>
+        <SearchableSelect
+          value={departmentId}
+          onChange={setDepartmentId}
+          options={departmentOptions}
+          placeholder="All departments"
+          searchPlaceholder="Search departments…"
+          className="max-w-xs"
+        />
+        <SearchableSelect
+          value={custodianId}
+          onChange={setCustodianId}
+          options={userOptions}
+          placeholder="All custodians"
+          searchPlaceholder="Search people…"
+          className="max-w-xs"
+        />
       </div>
 
       {loading ? (
