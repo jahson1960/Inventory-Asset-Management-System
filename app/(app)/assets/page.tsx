@@ -77,14 +77,13 @@ export default function AssetsPage() {
 
       <CustomPrintModal open={customPrintOpen} onClose={() => setCustomPrintOpen(false)} />
 
-      <div className="mb-2 flex flex-wrap gap-2">
+      <div className="mb-2 grid grid-cols-2 gap-2">
         <Input
           placeholder="Search tag, name, serial…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
         />
-        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="max-w-xs">
+        <Select value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">All statuses</option>
           {(['IN_STORE', 'ASSIGNED', 'UNDER_MAINTENANCE', 'RETIRED', 'DISPOSED', 'LOST'] as AssetStatus[]).map((s) => (
             <option key={s} value={s}>
@@ -93,14 +92,13 @@ export default function AssetsPage() {
           ))}
         </Select>
       </div>
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 grid grid-cols-3 gap-2">
         <SearchableSelect
           value={categoryId}
           onChange={setCategoryId}
           options={categoryOptions}
           placeholder="All categories"
           searchPlaceholder="Search categories…"
-          className="max-w-xs"
         />
         <SearchableSelect
           value={departmentId}
@@ -108,7 +106,6 @@ export default function AssetsPage() {
           options={departmentOptions}
           placeholder="All departments"
           searchPlaceholder="Search departments…"
-          className="max-w-xs"
         />
         <SearchableSelect
           value={custodianId}
@@ -116,7 +113,6 @@ export default function AssetsPage() {
           options={userOptions}
           placeholder="All custodians"
           searchPlaceholder="Search people…"
-          className="max-w-xs"
         />
       </div>
 

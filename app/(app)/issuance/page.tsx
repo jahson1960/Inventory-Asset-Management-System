@@ -42,14 +42,13 @@ export default function IssuancePage() {
         }
       />
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 grid grid-cols-3 gap-2">
         <SearchableSelect
           value={categoryId}
           onChange={setCategoryId}
           options={categoryOptions}
           placeholder="All categories"
           searchPlaceholder="Search categories…"
-          className="max-w-xs"
         />
         <SearchableSelect
           value={departmentId}
@@ -57,7 +56,6 @@ export default function IssuancePage() {
           options={departmentOptions}
           placeholder="All departments"
           searchPlaceholder="Search departments…"
-          className="max-w-xs"
         />
         <SearchableSelect
           value={requestedById}
@@ -65,7 +63,6 @@ export default function IssuancePage() {
           options={userOptions}
           placeholder="All recipients"
           searchPlaceholder="Search people…"
-          className="max-w-xs"
         />
       </div>
 

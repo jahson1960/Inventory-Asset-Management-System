@@ -143,8 +143,8 @@ export default function AssignmentsPage() {
         action={<ViewModeToggle mode={mode} onChange={setMode} />}
       />
 
-      <div className="mb-2 flex flex-wrap gap-2">
-        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="max-w-xs">
+      <div className="mb-2 grid grid-cols-2 gap-2">
+        <Select value={status} onChange={(e) => setStatus(e.target.value)}>
           {STATUS_FILTERS.map((f) => (
             <option key={f.value} value={f.value}>
               {f.label}
@@ -152,14 +152,13 @@ export default function AssignmentsPage() {
           ))}
         </Select>
       </div>
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 grid grid-cols-3 gap-2">
         <SearchableSelect
           value={categoryId}
           onChange={setCategoryId}
           options={categoryOptions}
           placeholder="All categories"
           searchPlaceholder="Search categories…"
-          className="max-w-xs"
         />
         <SearchableSelect
           value={departmentId}
@@ -167,7 +166,6 @@ export default function AssignmentsPage() {
           options={departmentOptions}
           placeholder="All departments"
           searchPlaceholder="Search departments…"
-          className="max-w-xs"
         />
         <SearchableSelect
           value={staffId}
@@ -175,7 +173,6 @@ export default function AssignmentsPage() {
           options={userOptions}
           placeholder="All staff"
           searchPlaceholder="Search people…"
-          className="max-w-xs"
         />
       </div>
 

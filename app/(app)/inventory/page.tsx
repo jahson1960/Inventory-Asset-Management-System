@@ -55,22 +55,20 @@ export default function InventoryItemsPage() {
         }
       />
 
-      <div className="mb-2 flex flex-wrap gap-2">
+      <div className="mb-2 grid grid-cols-2 gap-2">
         <Input
           placeholder="Search item code, name, barcode…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
         />
       </div>
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 grid grid-cols-3 gap-2">
         <SearchableSelect
           value={categoryId}
           onChange={setCategoryId}
           options={categoryOptions}
           placeholder="All categories"
           searchPlaceholder="Search categories…"
-          className="max-w-xs"
         />
         <SearchableSelect
           value={departmentId}
@@ -78,7 +76,6 @@ export default function InventoryItemsPage() {
           options={departmentOptions}
           placeholder="All departments"
           searchPlaceholder="Search departments…"
-          className="max-w-xs"
         />
         <SearchableSelect
           value={requestedById}
@@ -86,7 +83,6 @@ export default function InventoryItemsPage() {
           options={userOptions}
           placeholder="All recipients"
           searchPlaceholder="Search people…"
-          className="max-w-xs"
         />
       </div>
 
