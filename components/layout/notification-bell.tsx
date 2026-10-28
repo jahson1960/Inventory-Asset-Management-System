@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useApi } from '@/hooks/use-api';
 import { api, ApiError } from '@/lib/api-client';
 import { timeAgo } from '@/lib/time-ago';
-import type { NotificationRecord } from '@/lib/types';
+import type { NotificationRecord, Paginated } from '@/lib/types';
 import { cn } from '@/lib/cn';
 
 export function NotificationBell() {
@@ -35,8 +35,8 @@ export function NotificationBell() {
     setLoading(true);
     setError(null);
     api
-      .get<NotificationRecord[]>('/notifications')
-      .then(setNotifications)
+      .get<Paginated<NotificationRecord>>('/notifications')
+      .then((res) => setNotifications(res.items))
       .catch((err) => setError(err instanceof ApiError ? err.message : 'Failed to load notifications'))
       .finally(() => setLoading(false));
   }, [open, notifications]);
@@ -67,6 +67,7 @@ export function NotificationBell() {
     <div className="relative" ref={containerRef}>
       <button
         type="button"
+        aria-label="Notifications"
         onClick={() => setOpen((v) => !v)}
         className="relative rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
       >
