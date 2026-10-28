@@ -143,7 +143,7 @@ export default function AssignmentsPage() {
         action={<ViewModeToggle mode={mode} onChange={setMode} />}
       />
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-2 flex flex-wrap gap-2">
         <Select value={status} onChange={(e) => setStatus(e.target.value)} className="max-w-xs">
           {STATUS_FILTERS.map((f) => (
             <option key={f.value} value={f.value}>
@@ -151,6 +151,8 @@ export default function AssignmentsPage() {
             </option>
           ))}
         </Select>
+      </div>
+      <div className="mb-4 flex flex-wrap gap-2">
         <SearchableSelect
           value={categoryId}
           onChange={setCategoryId}

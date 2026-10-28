@@ -77,7 +77,7 @@ export default function AssetsPage() {
 
       <CustomPrintModal open={customPrintOpen} onClose={() => setCustomPrintOpen(false)} />
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-2 flex flex-wrap gap-2">
         <Input
           placeholder="Search tag, name, serial…"
           value={search}
@@ -92,6 +92,8 @@ export default function AssetsPage() {
             </option>
           ))}
         </Select>
+      </div>
+      <div className="mb-4 flex flex-wrap gap-2">
         <SearchableSelect
           value={categoryId}
           onChange={setCategoryId}

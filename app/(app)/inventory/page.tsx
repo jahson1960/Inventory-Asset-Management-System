@@ -55,13 +55,15 @@ export default function InventoryItemsPage() {
         }
       />
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-2 flex flex-wrap gap-2">
         <Input
           placeholder="Search item code, name, barcode…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
         />
+      </div>
+      <div className="mb-4 flex flex-wrap gap-2">
         <SearchableSelect
           value={categoryId}
           onChange={setCategoryId}
