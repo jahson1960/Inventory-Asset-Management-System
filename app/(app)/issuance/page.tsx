@@ -10,17 +10,20 @@ import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/tab
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { useDepartmentOptions, useUserOptions } from '@/hooks/use-filter-options';
+import { useDepartmentOptions, useUserOptions, useInventoryCategoryOptions } from '@/hooks/use-filter-options';
 import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
 import { RequirePermission } from '@/components/require-permission';
 
 export default function IssuancePage() {
+  const [categoryId, setCategoryId] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [requestedById, setRequestedById] = useState('');
+  const categoryOptions = useInventoryCategoryOptions();
   const departmentOptions = useDepartmentOptions();
   const userOptions = useUserOptions();
   const { data: issuances, loading, error } = useApi<InventoryIssuance[]>('/issuance', {
+    categoryId: categoryId || undefined,
     departmentId: departmentId || undefined,
     requestedById: requestedById || undefined,
   });
@@ -40,6 +43,14 @@ export default function IssuancePage() {
       />
 
       <div className="mb-4 flex flex-wrap gap-2">
+        <SearchableSelect
+          value={categoryId}
+          onChange={setCategoryId}
+          options={categoryOptions}
+          placeholder="All categories"
+          searchPlaceholder="Search categories…"
+          className="max-w-xs"
+        />
         <SearchableSelect
           value={departmentId}
           onChange={setDepartmentId}

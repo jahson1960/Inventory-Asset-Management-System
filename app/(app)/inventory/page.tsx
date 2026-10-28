@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { useDepartmentOptions, useUserOptions } from '@/hooks/use-filter-options';
+import { useDepartmentOptions, useUserOptions, useInventoryCategoryOptions } from '@/hooks/use-filter-options';
 import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
 import { RequirePermission } from '@/components/require-permission';
@@ -21,14 +21,17 @@ import { Pagination } from '@/components/ui/pagination';
 
 export default function InventoryItemsPage() {
   const [search, setSearch] = useState('');
+  const [categoryId, setCategoryId] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [requestedById, setRequestedById] = useState('');
   const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
   const pageSize = displaySettings?.pageSize ?? 25;
+  const categoryOptions = useInventoryCategoryOptions();
   const departmentOptions = useDepartmentOptions();
   const userOptions = useUserOptions();
   const { items, total, page, setPage, totalPages, loading, error } = usePaginatedApi<InventoryItem>('/inventory-items', pageSize, {
     search: search || undefined,
+    categoryId: categoryId || undefined,
     departmentId: departmentId || undefined,
     requestedById: requestedById || undefined,
   });
@@ -57,6 +60,14 @@ export default function InventoryItemsPage() {
           placeholder="Search item code, name, barcode…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+        <SearchableSelect
+          value={categoryId}
+          onChange={setCategoryId}
+          options={categoryOptions}
+          placeholder="All categories"
+          searchPlaceholder="Search categories…"
           className="max-w-xs"
         />
         <SearchableSelect

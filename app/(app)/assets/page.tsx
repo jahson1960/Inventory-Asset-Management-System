@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input, Select } from '@/components/ui/input';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { useDepartmentOptions, useUserOptions } from '@/hooks/use-filter-options';
+import { useDepartmentOptions, useUserOptions, useAssetCategoryOptions } from '@/hooks/use-filter-options';
 import { Modal } from '@/components/ui/modal';
 import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
@@ -35,16 +35,19 @@ const STATUS_TONE: Record<AssetStatus, 'green' | 'blue' | 'amber' | 'neutral' | 
 export default function AssetsPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [categoryId, setCategoryId] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [custodianId, setCustodianId] = useState('');
   const [customPrintOpen, setCustomPrintOpen] = useState(false);
   const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
   const pageSize = displaySettings?.pageSize ?? 25;
+  const categoryOptions = useAssetCategoryOptions();
   const departmentOptions = useDepartmentOptions();
   const userOptions = useUserOptions();
   const { items: assets, total, page, setPage, totalPages, loading, error } = usePaginatedApi<Asset>('/assets', pageSize, {
     search: search || undefined,
     status: status || undefined,
+    categoryId: categoryId || undefined,
     departmentId: departmentId || undefined,
     custodianId: custodianId || undefined,
   });
@@ -89,6 +92,14 @@ export default function AssetsPage() {
             </option>
           ))}
         </Select>
+        <SearchableSelect
+          value={categoryId}
+          onChange={setCategoryId}
+          options={categoryOptions}
+          placeholder="All categories"
+          searchPlaceholder="Search categories…"
+          className="max-w-xs"
+        />
         <SearchableSelect
           value={departmentId}
           onChange={setDepartmentId}

@@ -12,7 +12,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Select } from '@/components/ui/input';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { useDepartmentOptions, useUserOptions } from '@/hooks/use-filter-options';
+import { useDepartmentOptions, useUserOptions, useAssetCategoryOptions } from '@/hooks/use-filter-options';
 import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
 import { RequirePermission } from '@/components/require-permission';
@@ -32,12 +32,14 @@ const STATUS_FILTERS = [
 export default function AssignmentsPage() {
   const { user } = useAuth();
   const [status, setStatus] = useState<string>('active');
+  const [categoryId, setCategoryId] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [staffId, setStaffId] = useState('');
   const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
   const pageSize = displaySettings?.pageSize ?? 25;
   const adminDefault = displaySettings?.cardViewLists.includes('assignments') ? 'CARD' : 'TABLE';
   const [mode, setMode] = useListViewMode('assignments', adminDefault);
+  const categoryOptions = useAssetCategoryOptions();
   const departmentOptions = useDepartmentOptions();
   const userOptions = useUserOptions();
   const {
@@ -52,6 +54,7 @@ export default function AssignmentsPage() {
   } = usePaginatedApi<AssetAssignment>('/assignments', pageSize, {
     status: status === 'active' || status === '' ? undefined : status,
     excludeReturned: status === 'active' ? true : undefined,
+    categoryId: categoryId || undefined,
     departmentId: departmentId || undefined,
     staffId: staffId || undefined,
   });
@@ -148,6 +151,14 @@ export default function AssignmentsPage() {
             </option>
           ))}
         </Select>
+        <SearchableSelect
+          value={categoryId}
+          onChange={setCategoryId}
+          options={categoryOptions}
+          placeholder="All categories"
+          searchPlaceholder="Search categories…"
+          className="max-w-xs"
+        />
         <SearchableSelect
           value={departmentId}
           onChange={setDepartmentId}
