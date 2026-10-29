@@ -188,19 +188,34 @@ function ExpandedRow({ label, value }: { label: string; value: string }) {
  *  Printing template configured at Settings → Printing. The text area is a plain
  *  contentEditable with a minimal bold/italic/underline toolbar via document.execCommand —
  *  the resulting HTML is handed straight to printCustomText(), which sanitizes it before use. */
+const MIN_CUSTOM_PRINT_FONT_SIZE_PT = 4;
+const MAX_CUSTOM_PRINT_FONT_SIZE_PT = 72;
+
 function CustomPrintModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { data: settings } = useApi<CustomPrintSettingsRecord>('/settings/custom-print');
   const editorRef = useRef<HTMLDivElement>(null);
   const [isEmpty, setIsEmpty] = useState(true);
   const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false, underline: false });
+  // Starts from the saved Custom Printing default each time the modal opens, but is editable
+  // here so a one-off print can be bigger/smaller without changing that default.
+  const [fontSizePt, setFontSizePt] = useState(DEFAULT_CUSTOM_PRINT_SETTINGS.fontSizePt);
 
   useEffect(() => {
     if (open && editorRef.current) {
       editorRef.current.innerHTML = '';
       setIsEmpty(true);
       setActiveFormats({ bold: false, italic: false, underline: false });
+      setFontSizePt(settings?.fontSizePt ?? DEFAULT_CUSTOM_PRINT_SETTINGS.fontSizePt);
     }
+    // Only meant to reset when the modal opens, reading whatever settings value is current at
+    // that moment — must NOT also re-run (and wipe the editor) if settings refetches while the
+    // modal is already open and the user is mid-type.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  function adjustFontSize(delta: number) {
+    setFontSizePt((prev) => Math.min(MAX_CUSTOM_PRINT_FONT_SIZE_PT, Math.max(MIN_CUSTOM_PRINT_FONT_SIZE_PT, prev + delta)));
+  }
 
   function updateActiveFormats() {
     setActiveFormats({
@@ -222,13 +237,13 @@ function CustomPrintModal({ open, onClose }: { open: boolean; onClose: () => voi
 
   function onPrint() {
     if (!editorRef.current || !editorRef.current.textContent?.trim()) return;
-    printCustomText({ settings: settings ?? DEFAULT_CUSTOM_PRINT_SETTINGS, html: editorRef.current.innerHTML });
+    printCustomText({ settings: { ...(settings ?? DEFAULT_CUSTOM_PRINT_SETTINGS), fontSizePt }, html: editorRef.current.innerHTML });
     onClose();
   }
 
   return (
     <Modal open={open} onClose={onClose} title="Custom Print">
-      <div className="mb-2 flex gap-1 rounded-md border border-slate-300 bg-slate-50 p-1">
+      <div className="mb-2 flex items-center gap-1 rounded-md border border-slate-300 bg-slate-50 p-1">
         <ToolbarButton active={activeFormats.bold} label="Bold" onClick={() => applyFormat('bold')}>
           <span className="font-bold">B</span>
         </ToolbarButton>
@@ -237,6 +252,24 @@ function CustomPrintModal({ open, onClose }: { open: boolean; onClose: () => voi
         </ToolbarButton>
         <ToolbarButton active={activeFormats.underline} label="Underline" onClick={() => applyFormat('underline')}>
           <span className="underline">U</span>
+        </ToolbarButton>
+        <div className="mx-1 h-5 w-px bg-slate-300" />
+        <ToolbarButton
+          active={false}
+          label="Decrease text size"
+          onClick={() => adjustFontSize(-1)}
+          disabled={fontSizePt <= MIN_CUSTOM_PRINT_FONT_SIZE_PT}
+        >
+          <span className="text-xs font-bold">A−</span>
+        </ToolbarButton>
+        <span className="w-9 text-center text-xs text-slate-500">{fontSizePt}pt</span>
+        <ToolbarButton
+          active={false}
+          label="Increase text size"
+          onClick={() => adjustFontSize(1)}
+          disabled={fontSizePt >= MAX_CUSTOM_PRINT_FONT_SIZE_PT}
+        >
+          <span className="text-base font-bold">A+</span>
         </ToolbarButton>
       </div>
       <div
@@ -247,7 +280,8 @@ function CustomPrintModal({ open, onClose }: { open: boolean; onClose: () => voi
         onMouseUp={updateActiveFormats}
         onKeyUp={updateActiveFormats}
         data-placeholder="Type what you want printed…"
-        className="min-h-24 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
+        style={{ fontSize: `${fontSizePt}pt` }}
+        className="min-h-24 rounded-md border border-slate-300 px-3 py-2 text-slate-900 empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
       />
       <div className="mt-4 flex justify-end gap-2">
         <Button type="button" variant="secondary" size="sm" onClick={onClose}>
@@ -262,17 +296,33 @@ function CustomPrintModal({ open, onClose }: { open: boolean; onClose: () => voi
   );
 }
 
-function ToolbarButton({ active, label, onClick, children }: { active: boolean; label: string; onClick: () => void; children: ReactNode }) {
+function ToolbarButton({
+  active,
+  label,
+  onClick,
+  disabled,
+  children,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
   return (
     <button
       type="button"
       title={label}
       aria-label={label}
       aria-pressed={active}
+      disabled={disabled}
       // Prevents the editor's text selection from collapsing before execCommand runs.
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
-      className={cn('flex h-7 w-7 items-center justify-center rounded text-sm', active ? 'bg-gold text-white' : 'text-slate-600 hover:bg-slate-200')}
+      className={cn(
+        'flex h-7 w-7 items-center justify-center rounded text-sm disabled:cursor-not-allowed disabled:opacity-40',
+        active ? 'bg-gold text-white' : 'text-slate-600 hover:bg-slate-200',
+      )}
     >
       {children}
     </button>
