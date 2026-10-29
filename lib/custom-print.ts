@@ -43,7 +43,13 @@ function sanitizeNode(node: Node) {
       node.removeChild(el);
       continue;
     }
+    // A span's font-size (from the per-selection text-size toolbar buttons) is the one style
+    // worth keeping — captured and validated as a plain number before every attribute is
+    // stripped, then rebuilt from that validated value rather than the raw style string, so
+    // nothing else riding along in a crafted style/attribute can survive.
+    const fontSizeMatch = el.tagName === 'SPAN' ? /^(\d+(?:\.\d+)?)pt$/.exec(el.style.fontSize) : null;
     while (el.attributes.length > 0) el.removeAttribute(el.attributes[0].name);
+    if (fontSizeMatch) el.style.fontSize = `${fontSizeMatch[1]}pt`;
     sanitizeNode(el);
   }
 }

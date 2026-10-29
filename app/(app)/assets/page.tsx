@@ -196,39 +196,92 @@ function CustomPrintModal({ open, onClose }: { open: boolean; onClose: () => voi
   const editorRef = useRef<HTMLDivElement>(null);
   const [isEmpty, setIsEmpty] = useState(true);
   const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false, underline: false });
-  // Starts from the saved Custom Printing default each time the modal opens, but is editable
-  // here so a one-off print can be bigger/smaller without changing that default.
-  const [fontSizePt, setFontSizePt] = useState(DEFAULT_CUSTOM_PRINT_SETTINGS.fontSizePt);
+  const [hasSelection, setHasSelection] = useState(false);
+  const baseFontSizePt = settings?.fontSizePt ?? DEFAULT_CUSTOM_PRINT_SETTINGS.fontSizePt;
 
   useEffect(() => {
     if (open && editorRef.current) {
       editorRef.current.innerHTML = '';
       setIsEmpty(true);
       setActiveFormats({ bold: false, italic: false, underline: false });
-      setFontSizePt(settings?.fontSizePt ?? DEFAULT_CUSTOM_PRINT_SETTINGS.fontSizePt);
+      setHasSelection(false);
     }
-    // Only meant to reset when the modal opens, reading whatever settings value is current at
-    // that moment — must NOT also re-run (and wipe the editor) if settings refetches while the
-    // modal is already open and the user is mid-type.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  function adjustFontSize(delta: number) {
-    setFontSizePt((prev) => Math.min(MAX_CUSTOM_PRINT_FONT_SIZE_PT, Math.max(MIN_CUSTOM_PRINT_FONT_SIZE_PT, prev + delta)));
-  }
-
-  function updateActiveFormats() {
+  function updateToolbarState() {
     setActiveFormats({
       bold: document.queryCommandState('bold'),
       italic: document.queryCommandState('italic'),
       underline: document.queryCommandState('underline'),
     });
+    const selection = window.getSelection();
+    setHasSelection(
+      Boolean(selection && !selection.isCollapsed && selection.rangeCount > 0 && editorRef.current?.contains(selection.getRangeAt(0).commonAncestorContainer)),
+    );
   }
 
   function applyFormat(command: 'bold' | 'italic' | 'underline') {
     editorRef.current?.focus();
     document.execCommand(command);
-    updateActiveFormats();
+    updateToolbarState();
+  }
+
+  /** Wraps only the highlighted text in a span sized a step up/down from its own current size
+   *  (defaulting to the template's base size for plain text) — unlike Bold/Italic/Underline,
+   *  this never affects anything outside the selection, so it's a no-op with nothing selected. */
+  function adjustSelectionFontSize(delta: number) {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0 || !editorRef.current) return;
+    const range = selection.getRangeAt(0);
+    if (!editorRef.current.contains(range.commonAncestorContainer)) return;
+
+    const refNode = range.startContainer.nodeType === Node.TEXT_NODE ? range.startContainer.parentElement : (range.startContainer as HTMLElement);
+    const currentPx = refNode ? parseFloat(getComputedStyle(refNode).fontSize) : (baseFontSizePt * 4) / 3;
+    const currentPt = Math.round((currentPx * 3) / 4); // 72pt / 96px per inch
+    const nextPt = Math.min(MAX_CUSTOM_PRINT_FONT_SIZE_PT, Math.max(MIN_CUSTOM_PRINT_FONT_SIZE_PT, currentPt + delta));
+
+    // Re-clicking A-/A+ right after a previous click leaves the whole selection inside the span
+    // that click just created — resize that span in place rather than nesting a fresh wrapper
+    // around it every time. The selection can land there two ways: selectNodeContents(span) sets
+    // the range's container to the span element itself (offsets 0..childNodes.length), while a
+    // selection made some other way around the same text lands on the text node (offsets
+    // 0..text.length) — both need checking since the earlier only handled the text-node case.
+    let reusableSpan: HTMLElement | null = null;
+    if (range.startContainer === range.endContainer) {
+      const container = range.startContainer;
+      if (
+        container.nodeType === Node.ELEMENT_NODE &&
+        (container as HTMLElement).tagName === 'SPAN' &&
+        range.startOffset === 0 &&
+        range.endOffset === container.childNodes.length
+      ) {
+        reusableSpan = container as HTMLElement;
+      } else if (
+        container.nodeType === Node.TEXT_NODE &&
+        container.parentElement?.tagName === 'SPAN' &&
+        container.parentElement.childNodes.length === 1 &&
+        range.startOffset === 0 &&
+        range.endOffset === (container.textContent?.length ?? -1)
+      ) {
+        reusableSpan = container.parentElement;
+      }
+    }
+
+    const span = reusableSpan ?? document.createElement('span');
+    span.style.fontSize = `${nextPt}pt`;
+    if (!reusableSpan) {
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+    }
+
+    const newRange = document.createRange();
+    newRange.selectNodeContents(span);
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+
+    editorRef.current.focus();
+    onInput();
+    updateToolbarState();
   }
 
   function onInput() {
@@ -237,7 +290,7 @@ function CustomPrintModal({ open, onClose }: { open: boolean; onClose: () => voi
 
   function onPrint() {
     if (!editorRef.current || !editorRef.current.textContent?.trim()) return;
-    printCustomText({ settings: { ...(settings ?? DEFAULT_CUSTOM_PRINT_SETTINGS), fontSizePt }, html: editorRef.current.innerHTML });
+    printCustomText({ settings: settings ?? DEFAULT_CUSTOM_PRINT_SETTINGS, html: editorRef.current.innerHTML });
     onClose();
   }
 
@@ -256,31 +309,31 @@ function CustomPrintModal({ open, onClose }: { open: boolean; onClose: () => voi
         <div className="mx-1 h-5 w-px bg-slate-300" />
         <ToolbarButton
           active={false}
-          label="Decrease text size"
-          onClick={() => adjustFontSize(-1)}
-          disabled={fontSizePt <= MIN_CUSTOM_PRINT_FONT_SIZE_PT}
+          label="Decrease size of selected text"
+          onClick={() => adjustSelectionFontSize(-1)}
+          disabled={!hasSelection}
         >
           <span className="text-xs font-bold">A−</span>
         </ToolbarButton>
-        <span className="w-9 text-center text-xs text-slate-500">{fontSizePt}pt</span>
         <ToolbarButton
           active={false}
-          label="Increase text size"
-          onClick={() => adjustFontSize(1)}
-          disabled={fontSizePt >= MAX_CUSTOM_PRINT_FONT_SIZE_PT}
+          label="Increase size of selected text"
+          onClick={() => adjustSelectionFontSize(1)}
+          disabled={!hasSelection}
         >
           <span className="text-base font-bold">A+</span>
         </ToolbarButton>
       </div>
+      <p className="mb-2 text-xs text-slate-400">Highlight text first to change just its size — otherwise A−/A+ have nothing to apply to.</p>
       <div
         ref={editorRef}
         contentEditable
         suppressContentEditableWarning
         onInput={onInput}
-        onMouseUp={updateActiveFormats}
-        onKeyUp={updateActiveFormats}
+        onMouseUp={updateToolbarState}
+        onKeyUp={updateToolbarState}
         data-placeholder="Type what you want printed…"
-        style={{ fontSize: `${fontSizePt}pt` }}
+        style={{ fontSize: `${baseFontSizePt}pt` }}
         className="min-h-24 rounded-md border border-slate-300 px-3 py-2 text-slate-900 empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
       />
       <div className="mt-4 flex justify-end gap-2">
