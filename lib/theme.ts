@@ -34,15 +34,20 @@ export function applyTheme(theme: ThemeSettingsRecord) {
   applyFavicon(theme.faviconUrl);
 }
 
+/** Live-updates the tab icon after the theme loads/changes client-side (e.g. right after an
+ *  admin uploads a new favicon in Settings → Display). The initial favicon is already correct
+ *  from generateMetadata() in app/layout.tsx server-rendering it — this only needs to handle
+ *  in-session changes, but several browsers (Chrome included) silently ignore a same-link
+ *  href mutation, so the old link is removed and a fresh one inserted with a cache-busting
+ *  query param to force a re-fetch rather than relying on a (frequently stale) cached favicon. */
 export function applyFavicon(faviconUrl: string | null) {
-  const href = faviconUrl ? fileUrl(faviconUrl) : '/favicon.ico';
-  let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-  if (!link) {
-    link = document.createElement('link');
-    link.rel = 'icon';
-    document.head.appendChild(link);
-  }
+  const base = faviconUrl ? fileUrl(faviconUrl) : '/favicon.ico';
+  const href = `${base}${base.includes('?') ? '&' : '?'}v=${Date.now()}`;
+  document.querySelectorAll('link[rel="icon"]').forEach((el) => el.remove());
+  const link = document.createElement('link');
+  link.rel = 'icon';
   link.href = href;
+  document.head.appendChild(link);
 }
 
 export function brandLogoUrl(logoUrl: string | null): string | null {
