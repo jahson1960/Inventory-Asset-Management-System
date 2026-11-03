@@ -1,16 +1,19 @@
 'use client';
 
-import { use } from 'react';
+import { use, useState } from 'react';
 import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
-import { fileUrl } from '@/lib/api-client';
-import type { AssetAssignment, CurrentUser, InventoryIssuance } from '@/lib/types';
+import { api, fileUrl } from '@/lib/api-client';
+import type { AssetAssignment, Branch, CurrentUser, Department, InventoryIssuance, LocationNode, Paginated } from '@/lib/types';
 import { ASSIGNMENT_STATUS_LABELS, ASSIGNMENT_STATUS_TONE } from '@/lib/assignment-status';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
+import { useConfirm } from '@/components/ui/confirm-dialog';
+import { UserFormModal, RevealedPasswordModal } from '@/components/user-form-modal';
 import { ChevronLeftIcon, ChevronRightIcon, UserIcon, MonitorIcon, BoxIcon } from '@/components/icons/form-icons';
 
 interface UserDetail extends CurrentUser {
@@ -21,7 +24,7 @@ interface UserDetail extends CurrentUser {
 
 export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { data: user, loading, error } = useApi<UserDetail>(`/users/${id}`);
+  const { data: user, loading, error, refetch } = useApi<UserDetail>(`/users/${id}`);
   const {
     data: assignments,
     loading: assignmentsLoading,
@@ -32,6 +35,46 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     loading: issuancesLoading,
     error: issuancesError,
   } = useApi<InventoryIssuance[]>('/issuance', { requestedById: id, limit: 100 });
+  const { data: branchesPage } = useApi<Paginated<Branch>>('/branches', { pageSize: 1000 });
+  const { data: departmentsPage } = useApi<Paginated<Department>>('/departments', { pageSize: 1000 });
+  const { data: locationsPage } = useApi<Paginated<LocationNode>>('/locations', { pageSize: 1000 });
+  const [editOpen, setEditOpen] = useState(false);
+  const [revealedPassword, setRevealedPassword] = useState<{ email: string; password: string } | null>(null);
+  const confirm = useConfirm();
+
+  async function deactivate() {
+    if (!user) return;
+    const ok = await confirm({
+      title: 'Deactivate this user?',
+      message: 'They will no longer be able to sign in.',
+      tone: 'danger',
+      confirmLabel: 'Deactivate',
+    });
+    if (!ok) return;
+    await api.patch(`/users/${user.id}/deactivate`);
+    refetch();
+  }
+
+  async function activate() {
+    if (!user) return;
+    const ok = await confirm({ title: 'Activate this user?', message: 'They will be able to sign in again.' });
+    if (!ok) return;
+    await api.patch(`/users/${user.id}/activate`);
+    refetch();
+  }
+
+  async function resetPassword() {
+    if (!user) return;
+    const ok = await confirm({
+      title: `Reset ${user.firstName} ${user.lastName}'s password?`,
+      message: 'A new random temporary password will be emailed to them; they must change it on next login.',
+    });
+    if (!ok) return;
+    const result = await api.patch<{ emailSent: boolean; temporaryPassword?: string }>(`/users/${user.id}/reset-password`);
+    if (!result.emailSent && result.temporaryPassword) {
+      setRevealedPassword({ email: user.email, password: result.temporaryPassword });
+    }
+  }
 
   if (loading) return <PageLoading />;
   if (error || !user) return <ErrorAlert message={error ?? 'User not found'} />;
@@ -82,6 +125,24 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             <DetailRow label="Location" value={user.location?.name ?? '—'} />
             <DetailRow label="Phone" value={user.phone ?? '—'} />
           </dl>
+
+          <div className="flex w-full flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+            <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>
+              Edit
+            </Button>
+            <Button variant="secondary" size="sm" onClick={resetPassword}>
+              Reset password
+            </Button>
+            {user.isActive ? (
+              <Button variant="outline-danger" size="sm" onClick={deactivate}>
+                Deactivate
+              </Button>
+            ) : (
+              <Button variant="secondary" size="sm" onClick={activate}>
+                Activate
+              </Button>
+            )}
+          </div>
         </CardBody>
       </Card>
 
@@ -178,6 +239,21 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           </Table>
         )}
       </Card>
+
+      <UserFormModal
+        open={editOpen}
+        user={user}
+        branches={branchesPage?.items ?? []}
+        departments={departmentsPage?.items ?? []}
+        locations={locationsPage?.items ?? []}
+        onClose={() => setEditOpen(false)}
+        onSaved={() => {
+          setEditOpen(false);
+          refetch();
+        }}
+      />
+
+      <RevealedPasswordModal info={revealedPassword} onClose={() => setRevealedPassword(null)} />
     </div>
   );
 }
