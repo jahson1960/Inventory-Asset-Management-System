@@ -40,13 +40,15 @@ export function Td({
   children,
   className,
   colSpan,
+  onClick,
 }: {
   children: React.ReactNode;
   className?: string;
   colSpan?: number;
+  onClick?: (event: React.MouseEvent<HTMLTableCellElement>) => void;
 }) {
   return (
-    <td className={cn('px-4 py-2.5 text-slate-700', className)} colSpan={colSpan}>
+    <td className={cn('px-4 py-2.5 text-slate-700', className)} colSpan={colSpan} onClick={onClick}>
       {children}
     </td>
   );

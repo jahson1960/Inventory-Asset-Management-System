@@ -19,6 +19,7 @@ import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
 import { RequirePermission } from '@/components/require-permission';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { ReturnAssetModal } from '@/components/return-asset-modal';
 import { ASSIGNMENT_STATUS_LABELS, ASSIGNMENT_STATUS_TONE } from '@/lib/assignment-status';
 import {
   AlertTriangleIcon,
@@ -74,6 +75,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
   const { data: conditionPrintSettings } = useApi<ConditionPrintSettingsRecord>('/settings/condition-print');
   const [assignOpen, setAssignOpen] = useState(false);
   const [sendToTechOpen, setSendToTechOpen] = useState(false);
+  const [returningAssignment, setReturningAssignment] = useState<AssetAssignment | null>(null);
   const [statusSubmitting, setStatusSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const confirm = useConfirm();
@@ -82,23 +84,6 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
   if (error || !asset) return <ErrorAlert message={error ?? 'Asset not found'} />;
 
   const activeAssignment = assignments?.find((a) => a.status === 'ACTIVE');
-
-  async function onReturn() {
-    if (!activeAssignment) return;
-    const ok = await confirm({
-      title: 'Return this asset?',
-      message: 'The active assignment will be closed and the asset marked back in store.',
-    });
-    if (!ok) return;
-    setActionError(null);
-    try {
-      await api.post(`/assignments/${activeAssignment.id}/return`, {});
-      refetch();
-      refetchAssignments();
-    } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Failed to return asset');
-    }
-  }
 
   async function onStatusChange(status: AssetStatus) {
     const ok = await confirm({ title: 'Change asset status?', message: `Set status to ${status.replace('_', ' ')}.` });
@@ -188,7 +173,7 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
                 </Button>
               )}
               {activeAssignment && (
-                <Button variant="secondary" size="sm" onClick={onReturn}>
+                <Button variant="secondary" size="sm" onClick={() => setReturningAssignment(activeAssignment)}>
                   Return
                 </Button>
               )}
@@ -408,6 +393,15 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
           setSendToTechOpen(false);
           refetch();
           refetchMaintenance();
+        }}
+      />
+
+      <ReturnAssetModal
+        assignment={returningAssignment}
+        onClose={() => setReturningAssignment(null)}
+        onReturned={() => {
+          refetch();
+          refetchAssignments();
         }}
       />
     </div>

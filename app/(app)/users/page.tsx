@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import { api, ApiError, fileUrl, uploadFile } from '@/lib/api-client';
@@ -25,6 +26,7 @@ interface UserRow extends CurrentUser {
 }
 
 export default function UsersPage() {
+  const router = useRouter();
   const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
   const pageSize = displaySettings?.pageSize ?? 25;
   const { items: users, total, page, setPage, totalPages, loading, error, refetch } = usePaginatedApi<UserRow>('/users', pageSize);
@@ -107,7 +109,7 @@ export default function UsersPage() {
             </Thead>
             <Tbody>
               {users.map((u) => (
-                <Tr key={u.id}>
+                <Tr key={u.id} className="cursor-pointer" onClick={() => router.push(`/users/${u.id}`)}>
                   <Td>{u.staffNumber ?? '—'}</Td>
                   <Td>
                     <div className="font-medium text-slate-900">
@@ -123,7 +125,7 @@ export default function UsersPage() {
                   <Td>
                     <Badge tone={u.isActive ? 'green' : 'neutral'}>{u.isActive ? 'Active' : 'Inactive'}</Badge>
                   </Td>
-                  <Td>
+                  <Td onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       onClick={() => setSignatureUser(u)}
@@ -137,7 +139,7 @@ export default function UsersPage() {
                       )}
                     </button>
                   </Td>
-                  <Td>
+                  <Td onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => setEditingUser(u)}

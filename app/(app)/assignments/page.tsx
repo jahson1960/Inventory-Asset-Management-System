@@ -21,6 +21,7 @@ import { ExpandableList } from '@/components/ui/expandable-list';
 import { useListViewMode } from '@/hooks/use-list-view-mode';
 import { ViewModeToggle } from '@/components/ui/view-mode-toggle';
 import { Pagination } from '@/components/ui/pagination';
+import { ReturnAssetModal } from '@/components/return-asset-modal';
 
 const STATUS_FILTERS = [
   { value: 'active', label: 'Currently assigned' },
@@ -59,6 +60,7 @@ export default function AssignmentsPage() {
     staffId: staffId || undefined,
   });
   const [actionError, setActionError] = useState<string | null>(null);
+  const [returningAssignment, setReturningAssignment] = useState<AssetAssignment | null>(null);
   const confirm = useConfirm();
 
   async function onAcknowledge(id: string) {
@@ -91,21 +93,6 @@ export default function AssignmentsPage() {
     }
   }
 
-  async function onReturn(id: string, alreadyRequested: boolean) {
-    const ok = await confirm({
-      title: alreadyRequested ? 'Confirm this return?' : 'Return this asset?',
-      message: 'The assignment will be closed and the asset marked back in store.',
-    });
-    if (!ok) return;
-    setActionError(null);
-    try {
-      await api.post(`/assignments/${id}/return`, {});
-      refetch();
-    } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Failed to return asset');
-    }
-  }
-
   function renderActions(a: AssetAssignment) {
     const isOwnAssignment = Boolean(user && a.staffId === user.id);
     if (a.status === 'RETURNED') return null;
@@ -124,7 +111,7 @@ export default function AssignmentsPage() {
         {(a.status === 'ACTIVE' || a.status === 'RETURN_PENDING') && (
           <RequirePermission permission="assignments.manage">
             <button
-              onClick={() => onReturn(a.id, a.status === 'RETURN_PENDING')}
+              onClick={() => setReturningAssignment(a)}
               className="text-xs font-medium text-slate-600 hover:text-slate-900"
             >
               {a.status === 'RETURN_PENDING' ? 'Confirm Return' : 'Return'}
@@ -239,6 +226,12 @@ export default function AssignmentsPage() {
           <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
         </>
       )}
+
+      <ReturnAssetModal
+        assignment={returningAssignment}
+        onClose={() => setReturningAssignment(null)}
+        onReturned={refetch}
+      />
     </div>
   );
 }
