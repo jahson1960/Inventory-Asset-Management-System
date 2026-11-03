@@ -69,11 +69,9 @@ export function sanitizeRichText(html: string): string {
   return template.innerHTML;
 }
 
-/** Opens a dedicated print window for a rich-text note (bold/italic/underline preserved), sized
- *  to the Custom Print template's own paper size/margins/orientation and base font/alignment —
- *  used for the "Custom Print" button on the Asset Register page, for anything that isn't an
- *  asset tag or a condition. Independent from printAssetLabel/printAssetCondition. */
-export function printCustomText({ settings, html }: { settings: CustomPrintSettingsRecord; html: string }) {
+/** Pure geometry shared by printCustomText() and the on-screen preview in the Custom Print modal,
+ *  so the preview can't drift out of sync with what actually gets printed. */
+export function computeCustomPrintLayout(settings: CustomPrintSettingsRecord) {
   const width = Number(settings.widthIn) || 2;
   const height = Number(settings.heightIn) || 1;
   const rotated = settings.orientation === 'LANDSCAPE';
@@ -88,11 +86,45 @@ export function printCustomText({ settings, html }: { settings: CustomPrintSetti
   const boxWidthIn = rotated ? printableHeightIn : printableWidthIn;
   const boxHeightIn = rotated ? printableWidthIn : printableHeightIn;
 
-  const textAlign = TEXT_ALIGN_CSS[settings.textAlign] ?? 'center';
-  const textMarginTop = Number(settings.textMarginTopIn) || 0;
-  const textMarginRight = Number(settings.textMarginRightIn) || 0;
-  const textMarginBottom = Number(settings.textMarginBottomIn) || 0;
-  const textMarginLeft = Number(settings.textMarginLeftIn) || 0;
+  return {
+    width,
+    height,
+    rotated,
+    marginTop,
+    marginRight,
+    marginBottom,
+    marginLeft,
+    boxWidthIn,
+    boxHeightIn,
+    textAlign: TEXT_ALIGN_CSS[settings.textAlign] ?? 'center',
+    textMarginTop: Number(settings.textMarginTopIn) || 0,
+    textMarginRight: Number(settings.textMarginRightIn) || 0,
+    textMarginBottom: Number(settings.textMarginBottomIn) || 0,
+    textMarginLeft: Number(settings.textMarginLeftIn) || 0,
+  };
+}
+
+/** Opens a dedicated print window for a rich-text note (bold/italic/underline preserved), sized
+ *  to the Custom Print template's own paper size/margins/orientation and base font/alignment —
+ *  used for the "Custom Print" button on the Asset Register page, for anything that isn't an
+ *  asset tag or a condition. Independent from printAssetLabel/printAssetCondition. */
+export function printCustomText({ settings, html }: { settings: CustomPrintSettingsRecord; html: string }) {
+  const {
+    width,
+    height,
+    rotated,
+    marginTop,
+    marginRight,
+    marginBottom,
+    marginLeft,
+    boxWidthIn,
+    boxHeightIn,
+    textAlign,
+    textMarginTop,
+    textMarginRight,
+    textMarginBottom,
+    textMarginLeft,
+  } = computeCustomPrintLayout(settings);
   const safeHtml = sanitizeRichText(html);
 
   const win = window.open('', '_blank', 'width=400,height=300');

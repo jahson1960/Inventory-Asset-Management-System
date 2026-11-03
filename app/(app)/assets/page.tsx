@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import type { Asset, AssetStatus, CustomPrintSettingsRecord, DisplaySettingsRecord } from '@/lib/types';
-import { DEFAULT_CUSTOM_PRINT_SETTINGS, printCustomText } from '@/lib/custom-print';
+import { DEFAULT_CUSTOM_PRINT_SETTINGS, computeCustomPrintLayout, printCustomText, sanitizeRichText } from '@/lib/custom-print';
 import { cn } from '@/lib/cn';
 import { PageHeader } from '@/components/ui/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -195,6 +195,7 @@ function CustomPrintModal({ open, onClose }: { open: boolean; onClose: () => voi
   const { data: settings } = useApi<CustomPrintSettingsRecord>('/settings/custom-print');
   const editorRef = useRef<HTMLDivElement>(null);
   const [isEmpty, setIsEmpty] = useState(true);
+  const [previewHtml, setPreviewHtml] = useState('');
   const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false, underline: false });
   const [hasSelection, setHasSelection] = useState(false);
   const baseFontSizePt = settings?.fontSizePt ?? DEFAULT_CUSTOM_PRINT_SETTINGS.fontSizePt;
@@ -203,10 +204,20 @@ function CustomPrintModal({ open, onClose }: { open: boolean; onClose: () => voi
     if (open && editorRef.current) {
       editorRef.current.innerHTML = '';
       setIsEmpty(true);
+      setPreviewHtml('');
       setActiveFormats({ bold: false, italic: false, underline: false });
       setHasSelection(false);
     }
   }, [open]);
+
+  /** Keeps isEmpty/previewHtml in sync with the editor after any change — typing (onInput) as
+   *  well as toolbar actions (bold/italic/underline/font-size) that mutate the DOM directly via
+   *  document.execCommand/range APIs without necessarily firing a React input event. */
+  function syncFromEditor() {
+    const html = editorRef.current?.innerHTML ?? '';
+    setIsEmpty(!editorRef.current?.textContent?.trim());
+    setPreviewHtml(html);
+  }
 
   function updateToolbarState() {
     setActiveFormats({
@@ -224,6 +235,7 @@ function CustomPrintModal({ open, onClose }: { open: boolean; onClose: () => voi
     editorRef.current?.focus();
     document.execCommand(command);
     updateToolbarState();
+    syncFromEditor();
   }
 
   /** Wraps only the highlighted text in a span sized a step up/down from its own current size
@@ -280,12 +292,12 @@ function CustomPrintModal({ open, onClose }: { open: boolean; onClose: () => voi
     selection.addRange(newRange);
 
     editorRef.current.focus();
-    onInput();
+    syncFromEditor();
     updateToolbarState();
   }
 
   function onInput() {
-    setIsEmpty(!editorRef.current?.textContent?.trim());
+    syncFromEditor();
   }
 
   function onPrint() {
@@ -336,6 +348,7 @@ function CustomPrintModal({ open, onClose }: { open: boolean; onClose: () => voi
         style={{ fontSize: `${baseFontSizePt}pt` }}
         className="min-h-24 rounded-md border border-slate-300 px-3 py-2 text-slate-900 empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
       />
+      <CustomPrintPreview settings={settings ?? DEFAULT_CUSTOM_PRINT_SETTINGS} html={previewHtml} />
       <div className="mt-4 flex justify-end gap-2">
         <Button type="button" variant="secondary" size="sm" onClick={onClose}>
           Cancel
@@ -346,6 +359,54 @@ function CustomPrintModal({ open, onClose }: { open: boolean; onClose: () => voi
         </Button>
       </div>
     </Modal>
+  );
+}
+
+const PREVIEW_PX_PER_IN = 72;
+const PREVIEW_MAX_IN = 4;
+
+/** Scaled, live mirror of exactly what printCustomText() will produce — same paper box, margins,
+ *  rotation, font and alignment, fed the same sanitized HTML, so what's on screen is what prints. */
+function CustomPrintPreview({ settings, html }: { settings: CustomPrintSettingsRecord; html: string }) {
+  const layout = computeCustomPrintLayout(settings);
+  const previewWidthIn = Math.min(layout.width, PREVIEW_MAX_IN);
+  const previewHeightIn = Math.min(layout.height, PREVIEW_MAX_IN);
+  const boxWidthIn = Math.min(layout.boxWidthIn, previewWidthIn);
+  const boxHeightIn = Math.min(layout.boxHeightIn, previewHeightIn);
+  const safeHtml = sanitizeRichText(html);
+
+  return (
+    <div className="mt-4">
+      <p className="mb-1.5 text-xs font-medium text-slate-500">Preview</p>
+      <div
+        className="flex items-center justify-center overflow-hidden border border-dashed border-slate-300 bg-white"
+        style={{ width: `${previewWidthIn * PREVIEW_PX_PER_IN}px`, height: `${previewHeightIn * PREVIEW_PX_PER_IN}px` }}
+      >
+        <div
+          className="flex items-center justify-center overflow-hidden"
+          style={{
+            width: `${boxWidthIn * PREVIEW_PX_PER_IN}px`,
+            height: `${boxHeightIn * PREVIEW_PX_PER_IN}px`,
+            transform: layout.rotated ? 'rotate(90deg)' : undefined,
+          }}
+        >
+          {html.trim() ? (
+            <div
+              className="min-w-0 w-full break-words leading-tight"
+              style={{
+                fontFamily: settings.fontFamily,
+                fontSize: `${settings.fontSizePt}pt`,
+                textAlign: layout.textAlign as 'left' | 'center' | 'right' | 'justify',
+                margin: `${layout.textMarginTop}in ${layout.textMarginRight}in ${layout.textMarginBottom}in ${layout.textMarginLeft}in`,
+              }}
+              dangerouslySetInnerHTML={{ __html: safeHtml }}
+            />
+          ) : (
+            <span className="text-xs text-slate-400">Nothing to preview yet</span>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
