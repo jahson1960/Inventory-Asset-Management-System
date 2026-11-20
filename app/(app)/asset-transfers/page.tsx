@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import type { AssetTransferRecord, DisplaySettingsRecord } from '@/lib/types';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/ui/alert';
@@ -23,6 +25,13 @@ export default function AssetTransfersPage() {
   const adminDefault = displaySettings?.cardViewLists.includes('assetTransfers') ? 'CARD' : 'TABLE';
   const [mode, setMode] = useListViewMode('assetTransfers', adminDefault);
 
+  const exportColumns = [
+    { header: 'Asset', value: (t: AssetTransferRecord) => t.asset?.name ?? t.assetId },
+    { header: 'From', value: (t: AssetTransferRecord) => t.fromLocation?.name ?? '' },
+    { header: 'To', value: (t: AssetTransferRecord) => t.toLocation?.name ?? '' },
+    { header: 'Status', value: (t: AssetTransferRecord) => t.status },
+  ];
+
   return (
     <div>
       <PageHeader
@@ -31,6 +40,7 @@ export default function AssetTransfersPage() {
         action={
           <div className="flex items-center gap-2">
             <ViewModeToggle mode={mode} onChange={setMode} />
+            <ExportMenu filename="asset-transfers" columns={exportColumns} fetchRows={() => fetchAllForExport<AssetTransferRecord>('/asset-transfers')} />
             <RequirePermission permission="assetTransfers.create">
               <Link href="/asset-transfers/new">
                 <Button>New Transfer</Button>

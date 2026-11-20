@@ -6,6 +6,8 @@ import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import { api, ApiError } from '@/lib/api-client';
 import type { Branch, DisplaySettingsRecord, LocationNode, LocationType, Paginated } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { MobileCardList } from '@/components/ui/mobile-card-list';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -34,22 +36,33 @@ export default function LocationsPage() {
   const branchNameById = new Map((branches ?? []).map((b) => [b.id, b.name]));
   const locationNameById = new Map((allLocations ?? []).map((l) => [l.id, l.name]));
 
+  const exportColumns = [
+    { header: 'Name', value: (l: LocationNode) => l.name },
+    { header: 'Type', value: (l: LocationNode) => l.type },
+    { header: 'Branch', value: (l: LocationNode) => branchNameById.get(l.branchId) ?? '' },
+    { header: 'Parent', value: (l: LocationNode) => (l.parentId ? locationNameById.get(l.parentId) ?? '' : '') },
+    { header: 'Status', value: (l: LocationNode) => (l.isActive ? 'Active' : 'Inactive') },
+  ];
+
   return (
     <div>
       <PageHeader
         title="Locations"
         description="Branch → Building → Floor → Room → Store hierarchy."
         action={
-          <RequirePermission permission="locations.manage">
-            <Button
-              onClick={() => {
-                setEditing(null);
-                setModalOpen(true);
-              }}
-            >
-              New Location
-            </Button>
-          </RequirePermission>
+          <div className="flex items-center gap-2">
+            <ExportMenu filename="locations" columns={exportColumns} rows={allLocations ?? []} />
+            <RequirePermission permission="locations.manage">
+              <Button
+                onClick={() => {
+                  setEditing(null);
+                  setModalOpen(true);
+                }}
+              >
+                New Location
+              </Button>
+            </RequirePermission>
+          </div>
         }
       />
 
@@ -63,46 +76,77 @@ export default function LocationsPage() {
         ) : locations.length === 0 ? (
           <EmptyState message="No locations yet." />
         ) : (
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>Name</Th>
-                <Th>Type</Th>
-                <Th>Branch</Th>
-                <Th>Parent</Th>
-                <Th>Status</Th>
-                <Th />
-              </Tr>
-            </Thead>
-            <Tbody>
-              {locations.map((loc) => (
-                <Tr key={loc.id}>
-                  <Td className="font-medium text-slate-900">{loc.name}</Td>
-                  <Td>
-                    <Badge tone="blue">{loc.type}</Badge>
-                  </Td>
-                  <Td>{branchNameById.get(loc.branchId) ?? '—'}</Td>
-                  <Td>{loc.parentId ? (locationNameById.get(loc.parentId) ?? '—') : '—'}</Td>
-                  <Td>
-                    <Badge tone={loc.isActive ? 'green' : 'neutral'}>{loc.isActive ? 'Active' : 'Inactive'}</Badge>
-                  </Td>
-                  <Td>
-                    <RequirePermission permission="locations.manage">
-                      <button
-                        onClick={() => {
-                          setEditing(loc);
-                          setModalOpen(true);
-                        }}
-                        className="text-xs font-medium text-slate-600 hover:text-slate-900"
-                      >
-                        Edit
-                      </button>
-                    </RequirePermission>
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Name</Th>
+                    <Th>Type</Th>
+                    <Th>Branch</Th>
+                    <Th>Parent</Th>
+                    <Th>Status</Th>
+                    <Th />
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {locations.map((loc) => (
+                    <Tr key={loc.id}>
+                      <Td className="font-medium text-slate-900">{loc.name}</Td>
+                      <Td>
+                        <Badge tone="blue">{loc.type}</Badge>
+                      </Td>
+                      <Td>{branchNameById.get(loc.branchId) ?? '—'}</Td>
+                      <Td>{loc.parentId ? (locationNameById.get(loc.parentId) ?? '—') : '—'}</Td>
+                      <Td>
+                        <Badge tone={loc.isActive ? 'green' : 'neutral'}>{loc.isActive ? 'Active' : 'Inactive'}</Badge>
+                      </Td>
+                      <Td>
+                        <RequirePermission permission="locations.manage">
+                          <button
+                            onClick={() => {
+                              setEditing(loc);
+                              setModalOpen(true);
+                            }}
+                            className="text-xs font-medium text-slate-600 hover:text-slate-900"
+                          >
+                            Edit
+                          </button>
+                        </RequirePermission>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </div>
+            <div className="md:hidden">
+              <MobileCardList
+                rows={locations}
+                keyField={(loc) => loc.id}
+                title={(loc) => loc.name}
+                subtitle={(loc) => branchNameById.get(loc.branchId) ?? null}
+                badge={(loc) => <Badge tone={loc.isActive ? 'green' : 'neutral'}>{loc.isActive ? 'Active' : 'Inactive'}</Badge>}
+                fields={[
+                  { label: 'Type', value: (loc) => <Badge tone="blue">{loc.type}</Badge> },
+                  { label: 'Parent', value: (loc) => (loc.parentId ? locationNameById.get(loc.parentId) ?? '—' : '—') },
+                ]}
+                actions={(loc) => (
+                  <RequirePermission permission="locations.manage">
+                    <button
+                      onClick={() => {
+                        setEditing(loc);
+                        setModalOpen(true);
+                      }}
+                      className="text-xs font-medium text-slate-600 hover:text-slate-900"
+                    >
+                      Edit
+                    </button>
+                  </RequirePermission>
+                )}
+                emptyMessage="No locations yet."
+              />
+            </div>
+          </>
         )}
       </Card>
       <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />

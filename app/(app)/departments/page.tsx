@@ -5,7 +5,10 @@ import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import { api, ApiError } from '@/lib/api-client';
 import type { Department, DisplaySettingsRecord } from '@/lib/types';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { MobileCardList } from '@/components/ui/mobile-card-list';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -25,22 +28,31 @@ export default function DepartmentsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Department | null>(null);
 
+  const exportColumns = [
+    { header: 'Name', value: (d: Department) => d.name },
+    { header: 'Code', value: (d: Department) => d.code },
+    { header: 'Status', value: (d: Department) => (d.isActive ? 'Active' : 'Inactive') },
+  ];
+
   return (
     <div>
       <PageHeader
         title="Departments"
         description="Organization-wide departments, shared across every branch."
         action={
-          <RequirePermission permission="departments.manage">
-            <Button
-              onClick={() => {
-                setEditing(null);
-                setModalOpen(true);
-              }}
-            >
-              New Department
-            </Button>
-          </RequirePermission>
+          <div className="flex items-center gap-2">
+            <ExportMenu filename="departments" columns={exportColumns} fetchRows={() => fetchAllForExport<Department>('/departments')} />
+            <RequirePermission permission="departments.manage">
+              <Button
+                onClick={() => {
+                  setEditing(null);
+                  setModalOpen(true);
+                }}
+              >
+                New Department
+              </Button>
+            </RequirePermission>
+          </div>
         }
       />
 
@@ -54,40 +66,67 @@ export default function DepartmentsPage() {
         ) : departments.length === 0 ? (
           <EmptyState message="No departments yet." />
         ) : (
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>Name</Th>
-                <Th>Code</Th>
-                <Th>Status</Th>
-                <Th />
-              </Tr>
-            </Thead>
-            <Tbody>
-              {departments.map((dept) => (
-                <Tr key={dept.id}>
-                  <Td className="font-medium text-slate-900">{dept.name}</Td>
-                  <Td>{dept.code}</Td>
-                  <Td>
-                    <Badge tone={dept.isActive ? 'green' : 'neutral'}>{dept.isActive ? 'Active' : 'Inactive'}</Badge>
-                  </Td>
-                  <Td>
-                    <RequirePermission permission="departments.manage">
-                      <button
-                        onClick={() => {
-                          setEditing(dept);
-                          setModalOpen(true);
-                        }}
-                        className="text-xs font-medium text-slate-600 hover:text-slate-900"
-                      >
-                        Edit
-                      </button>
-                    </RequirePermission>
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Name</Th>
+                    <Th>Code</Th>
+                    <Th>Status</Th>
+                    <Th />
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {departments.map((dept) => (
+                    <Tr key={dept.id}>
+                      <Td className="font-medium text-slate-900">{dept.name}</Td>
+                      <Td>{dept.code}</Td>
+                      <Td>
+                        <Badge tone={dept.isActive ? 'green' : 'neutral'}>{dept.isActive ? 'Active' : 'Inactive'}</Badge>
+                      </Td>
+                      <Td>
+                        <RequirePermission permission="departments.manage">
+                          <button
+                            onClick={() => {
+                              setEditing(dept);
+                              setModalOpen(true);
+                            }}
+                            className="text-xs font-medium text-slate-600 hover:text-slate-900"
+                          >
+                            Edit
+                          </button>
+                        </RequirePermission>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </div>
+            <div className="md:hidden">
+              <MobileCardList
+                rows={departments}
+                keyField={(dept) => dept.id}
+                title={(dept) => dept.name}
+                subtitle={(dept) => dept.code}
+                badge={(dept) => <Badge tone={dept.isActive ? 'green' : 'neutral'}>{dept.isActive ? 'Active' : 'Inactive'}</Badge>}
+                actions={(dept) => (
+                  <RequirePermission permission="departments.manage">
+                    <button
+                      onClick={() => {
+                        setEditing(dept);
+                        setModalOpen(true);
+                      }}
+                      className="text-xs font-medium text-slate-600 hover:text-slate-900"
+                    >
+                      Edit
+                    </button>
+                  </RequirePermission>
+                )}
+                emptyMessage="No departments yet."
+              />
+            </div>
+          </>
         )}
       </Card>
       <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />

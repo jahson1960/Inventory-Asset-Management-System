@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import type { AssetRequestRecord, DisplaySettingsRecord } from '@/lib/types';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/ui/alert';
@@ -22,6 +24,14 @@ export default function AssetRequestsPage() {
   const adminDefault = displaySettings?.cardViewLists.includes('assetRequests') ? 'CARD' : 'TABLE';
   const [mode, setMode] = useListViewMode('assetRequests', adminDefault);
 
+  const exportColumns = [
+    { header: 'Name', value: (r: AssetRequestRecord) => r.name },
+    { header: 'Requested by', value: (r: AssetRequestRecord) => (r.requestedBy ? `${r.requestedBy.firstName} ${r.requestedBy.lastName}` : '') },
+    { header: 'Department', value: (r: AssetRequestRecord) => r.department?.name ?? '' },
+    { header: 'Est. cost', value: (r: AssetRequestRecord) => (r.estimatedCost ? Number(r.estimatedCost) : '') },
+    { header: 'Status', value: (r: AssetRequestRecord) => r.status },
+  ];
+
   return (
     <div>
       <PageHeader
@@ -30,6 +40,7 @@ export default function AssetRequestsPage() {
         action={
           <div className="flex items-center gap-2">
             <ViewModeToggle mode={mode} onChange={setMode} />
+            <ExportMenu filename="asset-requests" columns={exportColumns} fetchRows={() => fetchAllForExport<AssetRequestRecord>('/asset-requests')} />
             <Link href="/asset-requests/new">
               <Button>New Request</Button>
             </Link>

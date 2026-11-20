@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import type { InventoryRequestRecord, DisplaySettingsRecord } from '@/lib/types';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/ui/alert';
@@ -22,6 +24,14 @@ export default function InventoryRequestsPage() {
   const adminDefault = displaySettings?.cardViewLists.includes('inventoryRequests') ? 'CARD' : 'TABLE';
   const [mode, setMode] = useListViewMode('inventoryRequests', adminDefault);
 
+  const exportColumns = [
+    { header: 'Item', value: (r: InventoryRequestRecord) => r.item?.name ?? r.itemId },
+    { header: 'Quantity', value: (r: InventoryRequestRecord) => `${r.quantityRequested} ${r.unit?.code ?? ''}`.trim() },
+    { header: 'Requested by', value: (r: InventoryRequestRecord) => (r.requestedBy ? `${r.requestedBy.firstName} ${r.requestedBy.lastName}` : '') },
+    { header: 'Department', value: (r: InventoryRequestRecord) => r.department?.name ?? '' },
+    { header: 'Status', value: (r: InventoryRequestRecord) => r.status },
+  ];
+
   return (
     <div>
       <PageHeader
@@ -30,6 +40,11 @@ export default function InventoryRequestsPage() {
         action={
           <div className="flex items-center gap-2">
             <ViewModeToggle mode={mode} onChange={setMode} />
+            <ExportMenu
+              filename="inventory-requests"
+              columns={exportColumns}
+              fetchRows={() => fetchAllForExport<InventoryRequestRecord>('/inventory-requests')}
+            />
             <Link href="/inventory-requests/new">
               <Button>New Request</Button>
             </Link>

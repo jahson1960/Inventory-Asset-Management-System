@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import type { MaintenanceRequestRecord, DisplaySettingsRecord } from '@/lib/types';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/ui/alert';
@@ -22,6 +24,13 @@ export default function MaintenancePage() {
   const adminDefault = displaySettings?.cardViewLists.includes('maintenance') ? 'CARD' : 'TABLE';
   const [mode, setMode] = useListViewMode('maintenance', adminDefault);
 
+  const exportColumns = [
+    { header: 'Asset', value: (r: MaintenanceRequestRecord) => r.asset?.name ?? r.assetId },
+    { header: 'Fault', value: (r: MaintenanceRequestRecord) => r.faultDescription },
+    { header: 'Reported by', value: (r: MaintenanceRequestRecord) => (r.reportedBy ? `${r.reportedBy.firstName} ${r.reportedBy.lastName}` : '') },
+    { header: 'Status', value: (r: MaintenanceRequestRecord) => (r.status === 'FULFILLED' ? 'RESOLVED' : r.status) },
+  ];
+
   return (
     <div>
       <PageHeader
@@ -30,6 +39,7 @@ export default function MaintenancePage() {
         action={
           <div className="flex items-center gap-2">
             <ViewModeToggle mode={mode} onChange={setMode} />
+            <ExportMenu filename="maintenance-requests" columns={exportColumns} fetchRows={() => fetchAllForExport<MaintenanceRequestRecord>('/maintenance-requests')} />
             <Link href="/maintenance/new">
               <Button>Report Fault</Button>
             </Link>

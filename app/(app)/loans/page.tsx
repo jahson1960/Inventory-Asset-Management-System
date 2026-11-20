@@ -5,7 +5,10 @@ import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import type { AssetAssignment, DisplaySettingsRecord, EquipmentLoanRequestRecord } from '@/lib/types';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { MobileCardList } from '@/components/ui/mobile-card-list';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -81,8 +84,18 @@ function LoanRequestsTable({ mode, pageSize }: { mode: 'TABLE' | 'CARD'; pageSiz
   if (loading) return <PageLoading />;
   if (error) return <ErrorAlert message={error} />;
 
+  const exportColumns = [
+    { header: 'Asset', value: (r: EquipmentLoanRequestRecord) => r.asset?.name ?? r.assetId },
+    { header: 'Requested by', value: (r: EquipmentLoanRequestRecord) => (r.requestedBy ? `${r.requestedBy.firstName} ${r.requestedBy.lastName}` : '') },
+    { header: 'Expected return', value: (r: EquipmentLoanRequestRecord) => new Date(r.expectedReturnDate).toLocaleDateString() },
+    { header: 'Status', value: (r: EquipmentLoanRequestRecord) => r.status },
+  ];
+
   return (
     <>
+      <div className="mb-2 flex justify-end">
+        <ExportMenu filename="loan-requests" columns={exportColumns} fetchRows={() => fetchAllForExport<EquipmentLoanRequestRecord>('/loan-requests')} />
+      </div>
       <ExpandableList<EquipmentLoanRequestRecord>
         items={requests}
         mode={mode}
@@ -133,8 +146,20 @@ function LoansTable({ filter, pageSize }: { filter: string; pageSize: number }) 
     status: filter,
   });
 
+  const exportColumns = [
+    { header: 'Asset', value: (l: AssetAssignment) => l.asset?.name ?? l.assetId },
+    { header: 'Borrower', value: (l: AssetAssignment) => (l.staff ? `${l.staff.firstName} ${l.staff.lastName}` : '') },
+    { header: 'Issued', value: (l: AssetAssignment) => new Date(l.assignedAt).toLocaleDateString() },
+    { header: 'Expected return', value: (l: AssetAssignment) => (l.expectedReturnDate ? new Date(l.expectedReturnDate).toLocaleDateString() : '') },
+    { header: 'Returned', value: (l: AssetAssignment) => (l.returnedAt ? new Date(l.returnedAt).toLocaleDateString() : '') },
+    { header: 'Status', value: (l: AssetAssignment) => ASSIGNMENT_STATUS_LABELS[l.status] },
+  ];
+
   return (
     <>
+      <div className="mb-2 flex justify-end">
+        <ExportMenu filename="loans" columns={exportColumns} fetchRows={() => fetchAllForExport<AssetAssignment>('/loans', { status: filter })} />
+      </div>
       <Card>
         {loading ? (
           <PageLoading />
@@ -145,32 +170,51 @@ function LoansTable({ filter, pageSize }: { filter: string; pageSize: number }) 
         ) : loans.length === 0 ? (
           <EmptyState message="Nothing here." />
         ) : (
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>Asset</Th>
-                <Th>Borrower</Th>
-                <Th>Issued</Th>
-                <Th>Expected return</Th>
-                <Th>Returned</Th>
-                <Th>Status</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {loans.map((l) => (
-                <Tr key={l.id}>
-                  <Td className="font-medium text-slate-900">{l.asset?.name ?? l.assetId}</Td>
-                  <Td>{l.staff ? `${l.staff.firstName} ${l.staff.lastName}` : '—'}</Td>
-                  <Td>{new Date(l.assignedAt).toLocaleDateString()}</Td>
-                  <Td>{l.expectedReturnDate ? new Date(l.expectedReturnDate).toLocaleDateString() : '—'}</Td>
-                  <Td>{l.returnedAt ? new Date(l.returnedAt).toLocaleDateString() : '—'}</Td>
-                  <Td>
-                    <Badge tone={ASSIGNMENT_STATUS_TONE[l.status]}>{ASSIGNMENT_STATUS_LABELS[l.status]}</Badge>
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Asset</Th>
+                    <Th>Borrower</Th>
+                    <Th>Issued</Th>
+                    <Th>Expected return</Th>
+                    <Th>Returned</Th>
+                    <Th>Status</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {loans.map((l) => (
+                    <Tr key={l.id}>
+                      <Td className="font-medium text-slate-900">{l.asset?.name ?? l.assetId}</Td>
+                      <Td>{l.staff ? `${l.staff.firstName} ${l.staff.lastName}` : '—'}</Td>
+                      <Td>{new Date(l.assignedAt).toLocaleDateString()}</Td>
+                      <Td>{l.expectedReturnDate ? new Date(l.expectedReturnDate).toLocaleDateString() : '—'}</Td>
+                      <Td>{l.returnedAt ? new Date(l.returnedAt).toLocaleDateString() : '—'}</Td>
+                      <Td>
+                        <Badge tone={ASSIGNMENT_STATUS_TONE[l.status]}>{ASSIGNMENT_STATUS_LABELS[l.status]}</Badge>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </div>
+            <div className="md:hidden">
+              <MobileCardList
+                rows={loans}
+                keyField={(l) => l.id}
+                title={(l) => l.asset?.name ?? l.assetId}
+                subtitle={(l) => (l.staff ? `${l.staff.firstName} ${l.staff.lastName}` : null)}
+                badge={(l) => <Badge tone={ASSIGNMENT_STATUS_TONE[l.status]}>{ASSIGNMENT_STATUS_LABELS[l.status]}</Badge>}
+                fields={[
+                  { label: 'Issued', value: (l) => new Date(l.assignedAt).toLocaleDateString() },
+                  { label: 'Expected return', value: (l) => (l.expectedReturnDate ? new Date(l.expectedReturnDate).toLocaleDateString() : '—') },
+                  { label: 'Returned', value: (l) => (l.returnedAt ? new Date(l.returnedAt).toLocaleDateString() : '—') },
+                ]}
+                emptyMessage="Nothing here."
+              />
+            </div>
+          </>
         )}
       </Card>
       <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />

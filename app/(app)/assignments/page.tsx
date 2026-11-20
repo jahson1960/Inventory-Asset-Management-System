@@ -8,7 +8,9 @@ import { api, ApiError } from '@/lib/api-client';
 import { useAuth } from '@/contexts/auth-context';
 import type { AssetAssignment, DisplaySettingsRecord } from '@/lib/types';
 import { ASSIGNMENT_STATUS_LABELS, ASSIGNMENT_STATUS_TONE } from '@/lib/assignment-status';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
 import { Badge } from '@/components/ui/badge';
 import { Select } from '@/components/ui/input';
 import { SearchableSelect } from '@/components/ui/searchable-select';
@@ -122,12 +124,38 @@ export default function AssignmentsPage() {
     );
   }
 
+  const exportColumns = [
+    { header: 'Asset', value: (a: AssetAssignment) => a.asset?.name ?? a.assetId },
+    { header: 'Staff', value: (a: AssetAssignment) => (a.staff ? `${a.staff.firstName} ${a.staff.lastName}` : a.staffId) },
+    { header: 'Department', value: (a: AssetAssignment) => a.staff?.department?.name ?? '' },
+    { header: 'Assigned', value: (a: AssetAssignment) => new Date(a.assignedAt).toLocaleDateString() },
+    { header: 'Acknowledged', value: (a: AssetAssignment) => (a.acknowledged ? 'Yes' : 'Pending') },
+    { header: 'Status', value: (a: AssetAssignment) => ASSIGNMENT_STATUS_LABELS[a.status] },
+  ];
+
   return (
     <div>
       <PageHeader
         title="Assignments"
         description="Permanent asset assignments across the organization."
-        action={<ViewModeToggle mode={mode} onChange={setMode} />}
+        action={
+          <div className="flex items-center gap-2">
+            <ViewModeToggle mode={mode} onChange={setMode} />
+            <ExportMenu
+              filename="assignments"
+              columns={exportColumns}
+              fetchRows={() =>
+                fetchAllForExport<AssetAssignment>('/assignments', {
+                  status: status === 'active' || status === '' ? undefined : status,
+                  excludeReturned: status === 'active' ? true : undefined,
+                  categoryId: categoryId || undefined,
+                  departmentId: departmentId || undefined,
+                  staffId: staffId || undefined,
+                })
+              }
+            />
+          </div>
+        }
       />
 
       <div className="mb-2 grid grid-cols-2 gap-2">

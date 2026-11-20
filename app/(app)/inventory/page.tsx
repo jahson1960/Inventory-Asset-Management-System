@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import type { DisplaySettingsRecord, InventoryItem } from '@/lib/types';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +40,15 @@ export default function InventoryItemsPage() {
   const adminDefault = displaySettings?.cardViewLists.includes('inventory') ? 'CARD' : 'TABLE';
   const [mode, setMode] = useListViewMode('inventory', adminDefault);
 
+  const exportColumns = [
+    { header: 'Item Code', value: (i: InventoryItem) => i.itemCode },
+    { header: 'Name', value: (i: InventoryItem) => i.name },
+    { header: 'Category', value: (i: InventoryItem) => i.category?.name ?? '' },
+    { header: 'Base Unit', value: (i: InventoryItem) => i.baseUnit?.code ?? '' },
+    { header: 'Min Level', value: (i: InventoryItem) => i.minStockLevel },
+    { header: 'Status', value: (i: InventoryItem) => (i.isActive ? 'Active' : 'Inactive') },
+  ];
+
   return (
     <div>
       <PageHeader
@@ -46,6 +57,18 @@ export default function InventoryItemsPage() {
         action={
           <div className="flex items-center gap-2">
             <ViewModeToggle mode={mode} onChange={setMode} />
+            <ExportMenu
+              filename="inventory-items"
+              columns={exportColumns}
+              fetchRows={() =>
+                fetchAllForExport<InventoryItem>('/inventory-items', {
+                  search: search || undefined,
+                  categoryId: categoryId || undefined,
+                  departmentId: departmentId || undefined,
+                  requestedById: requestedById || undefined,
+                })
+              }
+            />
             <RequirePermission permission="inventoryItems.manage">
               <Link href="/inventory/new">
                 <Button>New Item</Button>

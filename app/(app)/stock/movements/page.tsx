@@ -14,6 +14,8 @@ import type {
 } from '@/lib/types';
 import { cn } from '@/lib/cn';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { MobileCardList } from '@/components/ui/mobile-card-list';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -54,17 +56,30 @@ export default function StockMovementsPage() {
   });
   const [adjustOpen, setAdjustOpen] = useState(false);
 
+  const exportColumns = [
+    { header: 'Date', value: (m: StockMovement) => new Date(m.occurredAt).toLocaleString() },
+    { header: 'Item', value: (m: StockMovement) => m.item?.name ?? m.itemId },
+    { header: 'Location', value: (m: StockMovement) => m.location?.name ?? '' },
+    { header: 'Type', value: (m: StockMovement) => m.movementType.replace('_', ' ') },
+    { header: 'Quantity', value: (m: StockMovement) => m.enteredQuantity },
+    { header: 'Unit', value: (m: StockMovement) => m.enteredUnit?.code ?? '' },
+    { header: 'By', value: (m: StockMovement) => (m.performedBy ? `${m.performedBy.firstName} ${m.performedBy.lastName}` : '') },
+  ];
+
   return (
     <div>
       <PageHeader
         title="Stock Movements"
         description="Complete ledger of receipts, issues and adjustments."
         action={
-          <RequirePermission permission="stock.manage">
-            <Button variant="secondary" onClick={() => setAdjustOpen(true)}>
-              Record Adjustment
-            </Button>
-          </RequirePermission>
+          <div className="flex items-center gap-2">
+            <ExportMenu filename="stock-movements" columns={exportColumns} rows={data?.items ?? []} />
+            <RequirePermission permission="stock.manage">
+              <Button variant="secondary" onClick={() => setAdjustOpen(true)}>
+                Record Adjustment
+              </Button>
+            </RequirePermission>
+          </div>
         }
       />
 
@@ -94,34 +109,53 @@ export default function StockMovementsPage() {
         ) : !data || data.items.length === 0 ? (
           <EmptyState message="No stock movements recorded yet." />
         ) : (
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>Date</Th>
-                <Th>Item</Th>
-                <Th>Location</Th>
-                <Th>Type</Th>
-                <Th>Quantity</Th>
-                <Th>By</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {data.items.map((m) => (
-                <Tr key={m.id}>
-                  <Td>{new Date(m.occurredAt).toLocaleString()}</Td>
-                  <Td className="font-medium text-slate-900">{m.item?.name ?? m.itemId}</Td>
-                  <Td>{m.location?.name ?? '—'}</Td>
-                  <Td>
-                    <Badge tone={MOVEMENT_TONE[m.movementType] ?? 'neutral'}>{m.movementType.replace('_', ' ')}</Badge>
-                  </Td>
-                  <Td>
-                    {m.enteredQuantity} {m.enteredUnit?.code}
-                  </Td>
-                  <Td>{m.performedBy ? `${m.performedBy.firstName} ${m.performedBy.lastName}` : '—'}</Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Date</Th>
+                    <Th>Item</Th>
+                    <Th>Location</Th>
+                    <Th>Type</Th>
+                    <Th>Quantity</Th>
+                    <Th>By</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {data.items.map((m) => (
+                    <Tr key={m.id}>
+                      <Td>{new Date(m.occurredAt).toLocaleString()}</Td>
+                      <Td className="font-medium text-slate-900">{m.item?.name ?? m.itemId}</Td>
+                      <Td>{m.location?.name ?? '—'}</Td>
+                      <Td>
+                        <Badge tone={MOVEMENT_TONE[m.movementType] ?? 'neutral'}>{m.movementType.replace('_', ' ')}</Badge>
+                      </Td>
+                      <Td>
+                        {m.enteredQuantity} {m.enteredUnit?.code}
+                      </Td>
+                      <Td>{m.performedBy ? `${m.performedBy.firstName} ${m.performedBy.lastName}` : '—'}</Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </div>
+            <div className="md:hidden">
+              <MobileCardList
+                rows={data.items}
+                keyField={(m) => m.id}
+                title={(m) => m.item?.name ?? m.itemId}
+                subtitle={(m) => new Date(m.occurredAt).toLocaleString()}
+                badge={(m) => <Badge tone={MOVEMENT_TONE[m.movementType] ?? 'neutral'}>{m.movementType.replace('_', ' ')}</Badge>}
+                fields={[
+                  { label: 'Location', value: (m) => m.location?.name ?? '—' },
+                  { label: 'Quantity', value: (m) => `${m.enteredQuantity} ${m.enteredUnit?.code ?? ''}`.trim() },
+                  { label: 'By', value: (m) => (m.performedBy ? `${m.performedBy.firstName} ${m.performedBy.lastName}` : '—') },
+                ]}
+                emptyMessage="No stock movements recorded yet."
+              />
+            </div>
+          </>
         )}
       </Card>
 

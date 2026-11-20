@@ -6,8 +6,10 @@ import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import type { Asset, AssetStatus, CustomPrintSettingsRecord, DisplaySettingsRecord } from '@/lib/types';
 import { DEFAULT_CUSTOM_PRINT_SETTINGS, computeCustomPrintLayout, printCustomText, sanitizeRichText } from '@/lib/custom-print';
+import { fetchAllForExport } from '@/lib/export-table';
 import { cn } from '@/lib/cn';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input, Select } from '@/components/ui/input';
@@ -54,6 +56,15 @@ export default function AssetsPage() {
   const adminDefault = displaySettings?.cardViewLists.includes('assets') ? 'CARD' : 'TABLE';
   const [mode, setMode] = useListViewMode('assets', adminDefault);
 
+  const exportColumns = [
+    { header: 'Asset Tag', value: (a: Asset) => a.assetTag },
+    { header: 'Name', value: (a: Asset) => a.name },
+    { header: 'Category', value: (a: Asset) => a.category?.name ?? '' },
+    { header: 'Location', value: (a: Asset) => a.currentLocation?.name ?? '' },
+    { header: 'Custodian', value: (a: Asset) => (a.currentCustodian ? `${a.currentCustodian.firstName} ${a.currentCustodian.lastName}` : '') },
+    { header: 'Status', value: (a: Asset) => a.status.replace('_', ' ') },
+  ];
+
   return (
     <div>
       <PageHeader
@@ -62,6 +73,19 @@ export default function AssetsPage() {
         action={
           <div className="flex items-center gap-2">
             <ViewModeToggle mode={mode} onChange={setMode} />
+            <ExportMenu
+              filename="assets"
+              columns={exportColumns}
+              fetchRows={() =>
+                fetchAllForExport<Asset>('/assets', {
+                  search: search || undefined,
+                  status: status || undefined,
+                  categoryId: categoryId || undefined,
+                  departmentId: departmentId || undefined,
+                  custodianId: custodianId || undefined,
+                })
+              }
+            />
             <Button variant="secondary" onClick={() => setCustomPrintOpen(true)}>
               <PrinterIcon className="h-4 w-4" />
               Custom Print

@@ -5,7 +5,10 @@ import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import { api, ApiError } from '@/lib/api-client';
 import type { DisplaySettingsRecord, UnitOfMeasure } from '@/lib/types';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { MobileCardList } from '@/components/ui/mobile-card-list';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -24,22 +27,30 @@ export default function UnitsOfMeasurePage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<UnitOfMeasure | null>(null);
 
+  const exportColumns = [
+    { header: 'Code', value: (u: UnitOfMeasure) => u.code },
+    { header: 'Name', value: (u: UnitOfMeasure) => u.name },
+  ];
+
   return (
     <div>
       <PageHeader
         title="Units of Measure"
         description="Base and operational units used for inventory transactions (e.g. Pieces, Carton, Pack)."
         action={
-          <RequirePermission permission="unitsOfMeasure.manage">
-            <Button
-              onClick={() => {
-                setEditing(null);
-                setModalOpen(true);
-              }}
-            >
-              New Unit
-            </Button>
-          </RequirePermission>
+          <div className="flex items-center gap-2">
+            <ExportMenu filename="units-of-measure" columns={exportColumns} fetchRows={() => fetchAllForExport<UnitOfMeasure>('/units-of-measure')} />
+            <RequirePermission permission="unitsOfMeasure.manage">
+              <Button
+                onClick={() => {
+                  setEditing(null);
+                  setModalOpen(true);
+                }}
+              >
+                New Unit
+              </Button>
+            </RequirePermission>
+          </div>
         }
       />
 
@@ -53,36 +64,62 @@ export default function UnitsOfMeasurePage() {
         ) : !units || units.length === 0 ? (
           <EmptyState message="No units yet." />
         ) : (
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>Code</Th>
-                <Th>Name</Th>
-                <Th />
-              </Tr>
-            </Thead>
-            <Tbody>
-              {units.map((unit) => (
-                <Tr key={unit.id}>
-                  <Td className="font-medium text-slate-900">{unit.code}</Td>
-                  <Td>{unit.name}</Td>
-                  <Td>
-                    <RequirePermission permission="unitsOfMeasure.manage">
-                      <button
-                        onClick={() => {
-                          setEditing(unit);
-                          setModalOpen(true);
-                        }}
-                        className="text-xs font-medium text-slate-600 hover:text-slate-900"
-                      >
-                        Edit
-                      </button>
-                    </RequirePermission>
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Code</Th>
+                    <Th>Name</Th>
+                    <Th />
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {units.map((unit) => (
+                    <Tr key={unit.id}>
+                      <Td className="font-medium text-slate-900">{unit.code}</Td>
+                      <Td>{unit.name}</Td>
+                      <Td>
+                        <RequirePermission permission="unitsOfMeasure.manage">
+                          <button
+                            onClick={() => {
+                              setEditing(unit);
+                              setModalOpen(true);
+                            }}
+                            className="text-xs font-medium text-slate-600 hover:text-slate-900"
+                          >
+                            Edit
+                          </button>
+                        </RequirePermission>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </div>
+            <div className="md:hidden">
+              <MobileCardList
+                rows={units}
+                keyField={(unit) => unit.id}
+                title={(unit) => unit.code}
+                subtitle={(unit) => unit.name}
+                actions={(unit) => (
+                  <RequirePermission permission="unitsOfMeasure.manage">
+                    <button
+                      onClick={() => {
+                        setEditing(unit);
+                        setModalOpen(true);
+                      }}
+                      className="text-xs font-medium text-slate-600 hover:text-slate-900"
+                    >
+                      Edit
+                    </button>
+                  </RequirePermission>
+                )}
+                emptyMessage="No units yet."
+              />
+            </div>
+          </>
         )}
       </Card>
       <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />

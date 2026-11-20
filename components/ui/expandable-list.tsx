@@ -29,6 +29,10 @@ export interface ExpandableListProps<T> {
  * Settings → Display), where clicking a row/card expands it in place with a Close button —
  * a quick-peek alongside the item's full page (linked via `viewFullHref`), not a replacement
  * for it.
+ *
+ * Below the `md` breakpoint the card grid always wins, regardless of `mode` — a wide table
+ * never fits a phone screen, so mobile ignores the table/card preference entirely and the
+ * TABLE/CARD toggle only takes effect at `md` and up.
  */
 export function ExpandableList<T>({
   items,
@@ -55,15 +59,15 @@ export function ExpandableList<T>({
     setExpandedKey((prev) => (prev === key ? null : key));
   }
 
-  if (mode === 'CARD') {
-    return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => {
-          const key = getRowKey(item);
-          const expanded = expandedKey === key;
-          if (expanded) {
-            return (
-              <div key={key} className="col-span-full">
+  const cardGrid = (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {items.map((item) => {
+        const key = getRowKey(item);
+        const expanded = expandedKey === key;
+        if (expanded) {
+          return (
+            <div key={key} className="col-span-full">
+              <div className="hidden md:block">
                 <Table>
                   <Thead>
                     <Tr>
@@ -80,28 +84,44 @@ export function ExpandableList<T>({
                     </Tr>
                   </Tbody>
                 </Table>
-                <Card className="mt-2">
-                  <div className="p-4">
-                    {renderExpanded(item)}
-                    <ExpandedFooter href={viewFullHref(item)} enablePrint={enablePrint} onClose={() => setExpandedKey(null)} />
-                  </div>
-                </Card>
               </div>
-            );
-          }
-          return (
-            <Card key={key}>
-              <button type="button" onClick={() => toggle(key)} className="w-full p-4 text-left">
-                {renderCard(item)}
-              </button>
-            </Card>
+              <Card className="mt-2">
+                <div className="p-4">
+                  {renderExpanded(item)}
+                  <ExpandedFooter href={viewFullHref(item)} enablePrint={enablePrint} onClose={() => setExpandedKey(null)} />
+                </div>
+              </Card>
+            </div>
           );
-        })}
-      </div>
-    );
-  }
+        }
+        return (
+          <Card key={key}>
+            {/* Not a <button>: renderCard often nests real buttons/links (row actions), which
+                HTML forbids inside a <button> and React flags as a hydration error. */}
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest('button, a, input, select, textarea')) return;
+                toggle(key);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggle(key);
+                }
+              }}
+              className="w-full cursor-pointer p-4 text-left"
+            >
+              {renderCard(item)}
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
 
-  return (
+  const tableView = (
     <Card>
       <Table>
         <Thead>
@@ -136,6 +156,13 @@ export function ExpandableList<T>({
         </Tbody>
       </Table>
     </Card>
+  );
+
+  return (
+    <>
+      <div className="md:hidden">{cardGrid}</div>
+      <div className="hidden md:block">{mode === 'CARD' ? cardGrid : tableView}</div>
+    </>
   );
 }
 

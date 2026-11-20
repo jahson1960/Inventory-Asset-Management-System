@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import type { InventoryIssuance } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { MobileCardList } from '@/components/ui/mobile-card-list';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -28,17 +30,29 @@ export default function IssuancePage() {
     requestedById: requestedById || undefined,
   });
 
+  const exportColumns = [
+    { header: 'Date', value: (i: InventoryIssuance) => new Date(i.issuedAt).toLocaleDateString() },
+    { header: 'Item', value: (i: InventoryIssuance) => i.item?.name ?? i.itemId },
+    { header: 'Quantity', value: (i: InventoryIssuance) => `${i.quantityIssued} ${i.enteredUnit?.code ?? ''}`.trim() },
+    { header: 'Recipient', value: (i: InventoryIssuance) => (i.requestedBy ? `${i.requestedBy.firstName} ${i.requestedBy.lastName}` : '') },
+    { header: 'Department', value: (i: InventoryIssuance) => i.department?.name ?? '' },
+    { header: 'Acknowledged', value: (i: InventoryIssuance) => (i.recipientAcknowledged ? 'Yes' : 'Pending') },
+  ];
+
   return (
     <div>
       <PageHeader
         title="Inventory Issuance"
         description="Consumable inventory issued to staff and departments."
         action={
-          <RequirePermission permission="issuance.create">
-            <Link href="/issuance/new">
-              <Button>New Issuance</Button>
-            </Link>
-          </RequirePermission>
+          <div className="flex items-center gap-2">
+            <ExportMenu filename="inventory-issuance" columns={exportColumns} rows={issuances ?? []} />
+            <RequirePermission permission="issuance.create">
+              <Link href="/issuance/new">
+                <Button>New Issuance</Button>
+              </Link>
+            </RequirePermission>
+          </div>
         }
       />
 
@@ -76,36 +90,55 @@ export default function IssuancePage() {
         ) : !issuances || issuances.length === 0 ? (
           <EmptyState message="No issuance records yet." />
         ) : (
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>Date</Th>
-                <Th>Item</Th>
-                <Th>Quantity</Th>
-                <Th>Recipient</Th>
-                <Th>Department</Th>
-                <Th>Acknowledged</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {issuances.map((i) => (
-                <Tr key={i.id}>
-                  <Td>{new Date(i.issuedAt).toLocaleDateString()}</Td>
-                  <Td className="font-medium text-slate-900">{i.item?.name ?? i.itemId}</Td>
-                  <Td>
-                    {i.quantityIssued} {i.enteredUnit?.code}
-                  </Td>
-                  <Td>{i.requestedBy ? `${i.requestedBy.firstName} ${i.requestedBy.lastName}` : '—'}</Td>
-                  <Td>{i.department?.name ?? '—'}</Td>
-                  <Td>
-                    <Badge tone={i.recipientAcknowledged ? 'green' : 'amber'}>
-                      {i.recipientAcknowledged ? 'Yes' : 'Pending'}
-                    </Badge>
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Date</Th>
+                    <Th>Item</Th>
+                    <Th>Quantity</Th>
+                    <Th>Recipient</Th>
+                    <Th>Department</Th>
+                    <Th>Acknowledged</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {issuances.map((i) => (
+                    <Tr key={i.id}>
+                      <Td>{new Date(i.issuedAt).toLocaleDateString()}</Td>
+                      <Td className="font-medium text-slate-900">{i.item?.name ?? i.itemId}</Td>
+                      <Td>
+                        {i.quantityIssued} {i.enteredUnit?.code}
+                      </Td>
+                      <Td>{i.requestedBy ? `${i.requestedBy.firstName} ${i.requestedBy.lastName}` : '—'}</Td>
+                      <Td>{i.department?.name ?? '—'}</Td>
+                      <Td>
+                        <Badge tone={i.recipientAcknowledged ? 'green' : 'amber'}>
+                          {i.recipientAcknowledged ? 'Yes' : 'Pending'}
+                        </Badge>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </div>
+            <div className="md:hidden">
+              <MobileCardList
+                rows={issuances}
+                keyField={(i) => i.id}
+                title={(i) => i.item?.name ?? i.itemId}
+                subtitle={(i) => new Date(i.issuedAt).toLocaleDateString()}
+                badge={(i) => <Badge tone={i.recipientAcknowledged ? 'green' : 'amber'}>{i.recipientAcknowledged ? 'Yes' : 'Pending'}</Badge>}
+                fields={[
+                  { label: 'Quantity', value: (i) => `${i.quantityIssued} ${i.enteredUnit?.code ?? ''}`.trim() },
+                  { label: 'Recipient', value: (i) => (i.requestedBy ? `${i.requestedBy.firstName} ${i.requestedBy.lastName}` : '—') },
+                  { label: 'Department', value: (i) => i.department?.name ?? '—' },
+                ]}
+                emptyMessage="No issuance records yet."
+              />
+            </div>
+          </>
         )}
       </Card>
     </div>

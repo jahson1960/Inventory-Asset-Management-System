@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import type { InventoryTransferRecord, DisplaySettingsRecord } from '@/lib/types';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/ui/alert';
@@ -23,6 +25,14 @@ export default function InventoryTransfersPage() {
   const adminDefault = displaySettings?.cardViewLists.includes('inventoryTransfers') ? 'CARD' : 'TABLE';
   const [mode, setMode] = useListViewMode('inventoryTransfers', adminDefault);
 
+  const exportColumns = [
+    { header: 'Item', value: (t: InventoryTransferRecord) => t.item?.name ?? t.itemId },
+    { header: 'Quantity', value: (t: InventoryTransferRecord) => `${t.quantity} ${t.unit?.code ?? ''}`.trim() },
+    { header: 'From', value: (t: InventoryTransferRecord) => t.fromLocation?.name ?? '' },
+    { header: 'To', value: (t: InventoryTransferRecord) => t.toLocation?.name ?? '' },
+    { header: 'Status', value: (t: InventoryTransferRecord) => t.status },
+  ];
+
   return (
     <div>
       <PageHeader
@@ -31,6 +41,11 @@ export default function InventoryTransfersPage() {
         action={
           <div className="flex items-center gap-2">
             <ViewModeToggle mode={mode} onChange={setMode} />
+            <ExportMenu
+              filename="inventory-transfers"
+              columns={exportColumns}
+              fetchRows={() => fetchAllForExport<InventoryTransferRecord>('/inventory-transfers')}
+            />
             <RequirePermission permission="inventoryTransfers.create">
               <Link href="/inventory-transfers/new">
                 <Button>New Transfer</Button>

@@ -3,7 +3,9 @@
 import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import type { DisplaySettingsRecord, PendingApprovalItem, WorkflowEntityType } from '@/lib/types';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
 import { Badge } from '@/components/ui/badge';
 import { ErrorAlert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/spinner';
@@ -49,12 +51,26 @@ export default function ApprovalsPage() {
   const adminDefault = displaySettings?.cardViewLists.includes('approvals') ? 'CARD' : 'TABLE';
   const [mode, setMode] = useListViewMode('approvals', adminDefault);
 
+  const exportColumns = [
+    { header: 'Type', value: (item: PendingApprovalItem) => ENTITY_LABELS[item.entityType] },
+    { header: 'Summary', value: (item: PendingApprovalItem) => item.summary },
+    { header: 'Requested by', value: (item: PendingApprovalItem) => item.requestedByName ?? '' },
+    { header: 'Department', value: (item: PendingApprovalItem) => item.departmentName ?? '' },
+    { header: 'Status', value: (item: PendingApprovalItem) => `Awaiting ${item.requiredRole.replace('_', ' ')}` },
+    { header: 'Submitted', value: (item: PendingApprovalItem) => new Date(item.createdAt).toLocaleDateString() },
+  ];
+
   return (
     <div>
       <PageHeader
         title="My Approvals"
         description="Items awaiting your decision across every workflow type."
-        action={<ViewModeToggle mode={mode} onChange={setMode} />}
+        action={
+          <div className="flex items-center gap-2">
+            <ViewModeToggle mode={mode} onChange={setMode} />
+            <ExportMenu filename="approvals" columns={exportColumns} fetchRows={() => fetchAllForExport<PendingApprovalItem>('/approvals/pending')} />
+          </div>
+        }
       />
 
       {loading ? (

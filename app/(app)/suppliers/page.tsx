@@ -5,7 +5,10 @@ import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import { api, ApiError } from '@/lib/api-client';
 import type { DisplaySettingsRecord, Supplier } from '@/lib/types';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { MobileCardList } from '@/components/ui/mobile-card-list';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -38,15 +41,26 @@ export default function SuppliersPage() {
     setModalOpen(true);
   }
 
+  const exportColumns = [
+    { header: 'Name', value: (s: Supplier) => s.name },
+    { header: 'Contact person', value: (s: Supplier) => s.contactPerson ?? '' },
+    { header: 'Phone', value: (s: Supplier) => s.phone ?? '' },
+    { header: 'Email', value: (s: Supplier) => s.email ?? '' },
+    { header: 'Status', value: (s: Supplier) => (s.isActive ? 'Active' : 'Inactive') },
+  ];
+
   return (
     <div>
       <PageHeader
         title="Suppliers"
         description="Vendors assets and inventory can be sourced from."
         action={
-          <RequirePermission permission="suppliers.manage">
-            <Button onClick={openCreate}>New Supplier</Button>
-          </RequirePermission>
+          <div className="flex items-center gap-2">
+            <ExportMenu filename="suppliers" columns={exportColumns} fetchRows={() => fetchAllForExport<Supplier>('/suppliers')} />
+            <RequirePermission permission="suppliers.manage">
+              <Button onClick={openCreate}>New Supplier</Button>
+            </RequirePermission>
+          </div>
         }
       />
 
@@ -60,43 +74,68 @@ export default function SuppliersPage() {
         ) : !suppliers || suppliers.length === 0 ? (
           <EmptyState message="No suppliers yet." />
         ) : (
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>Name</Th>
-                <Th>Contact person</Th>
-                <Th>Phone</Th>
-                <Th>Email</Th>
-                <Th>Status</Th>
-                <Th />
-              </Tr>
-            </Thead>
-            <Tbody>
-              {suppliers.map((supplier) => (
-                <Tr key={supplier.id}>
-                  <Td className="font-medium text-slate-900">{supplier.name}</Td>
-                  <Td>{supplier.contactPerson ?? '—'}</Td>
-                  <Td>{supplier.phone ?? '—'}</Td>
-                  <Td>{supplier.email ?? '—'}</Td>
-                  <Td>
-                    <Badge tone={supplier.isActive ? 'green' : 'neutral'}>
-                      {supplier.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </Td>
-                  <Td>
-                    <RequirePermission permission="suppliers.manage">
-                      <button
-                        onClick={() => openEdit(supplier)}
-                        className="text-xs font-medium text-slate-600 hover:text-slate-900"
-                      >
-                        Edit
-                      </button>
-                    </RequirePermission>
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Name</Th>
+                    <Th>Contact person</Th>
+                    <Th>Phone</Th>
+                    <Th>Email</Th>
+                    <Th>Status</Th>
+                    <Th />
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {suppliers.map((supplier) => (
+                    <Tr key={supplier.id}>
+                      <Td className="font-medium text-slate-900">{supplier.name}</Td>
+                      <Td>{supplier.contactPerson ?? '—'}</Td>
+                      <Td>{supplier.phone ?? '—'}</Td>
+                      <Td>{supplier.email ?? '—'}</Td>
+                      <Td>
+                        <Badge tone={supplier.isActive ? 'green' : 'neutral'}>
+                          {supplier.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </Td>
+                      <Td>
+                        <RequirePermission permission="suppliers.manage">
+                          <button
+                            onClick={() => openEdit(supplier)}
+                            className="text-xs font-medium text-slate-600 hover:text-slate-900"
+                          >
+                            Edit
+                          </button>
+                        </RequirePermission>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </div>
+            <div className="md:hidden">
+              <MobileCardList
+                rows={suppliers}
+                keyField={(s) => s.id}
+                title={(s) => s.name}
+                subtitle={(s) => s.contactPerson ?? null}
+                badge={(s) => <Badge tone={s.isActive ? 'green' : 'neutral'}>{s.isActive ? 'Active' : 'Inactive'}</Badge>}
+                fields={[
+                  { label: 'Phone', value: (s) => s.phone ?? '—' },
+                  { label: 'Email', value: (s) => s.email ?? '—' },
+                ]}
+                actions={(s) => (
+                  <RequirePermission permission="suppliers.manage">
+                    <button onClick={() => openEdit(s)} className="text-xs font-medium text-slate-600 hover:text-slate-900">
+                      Edit
+                    </button>
+                  </RequirePermission>
+                )}
+                emptyMessage="No suppliers yet."
+              />
+            </div>
+          </>
         )}
       </Card>
       <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />

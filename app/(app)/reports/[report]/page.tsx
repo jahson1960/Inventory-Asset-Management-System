@@ -4,8 +4,9 @@ import { use, useState } from 'react';
 import { notFound } from 'next/navigation';
 import { useApi } from '@/hooks/use-api';
 import { REPORT_CONFIGS, ASSET_GROUP_BY_OPTIONS } from '@/lib/report-configs';
-import { exportToCsv } from '@/lib/csv-export';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { MobileCardList } from '@/components/ui/mobile-card-list';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Select } from '@/components/ui/input';
@@ -28,13 +29,7 @@ export default function ReportPage({ params }: { params: Promise<{ report: strin
       : [];
   const summary = Array.isArray(data) ? undefined : (data as { summary?: unknown } | undefined)?.summary;
 
-  function onExportCsv() {
-    exportToCsv(
-      report,
-      rows,
-      config.columns.map((col) => ({ header: col.header, value: (row: unknown) => String(col.render(row) ?? '') })),
-    );
-  }
+  const exportColumns = config.columns.map((col) => ({ header: col.header, value: (row: unknown) => String(col.render(row) ?? '') }));
 
   return (
     <div>
@@ -44,9 +39,7 @@ export default function ReportPage({ params }: { params: Promise<{ report: strin
         action={
           rows.length > 0 && (
             <div className="no-print flex gap-2">
-              <Button variant="secondary" size="sm" onClick={onExportCsv}>
-                Export CSV
-              </Button>
+              <ExportMenu filename={report} rows={rows} columns={exportColumns} />
               <Button variant="secondary" size="sm" onClick={() => window.print()}>
                 Print / Save as PDF
               </Button>
@@ -90,24 +83,37 @@ export default function ReportPage({ params }: { params: Promise<{ report: strin
         ) : rows.length === 0 ? (
           <EmptyState message="No data for this report." />
         ) : (
-          <Table>
-            <Thead>
-              <Tr>
-                {config.columns.map((col) => (
-                  <Th key={col.header}>{col.header}</Th>
-                ))}
-              </Tr>
-            </Thead>
-            <Tbody>
-              {rows.map((row, idx) => (
-                <Tr key={idx}>
-                  {config.columns.map((col) => (
-                    <Td key={col.header}>{col.render(row)}</Td>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <Thead>
+                  <Tr>
+                    {config.columns.map((col) => (
+                      <Th key={col.header}>{col.header}</Th>
+                    ))}
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {rows.map((row, idx) => (
+                    <Tr key={idx}>
+                      {config.columns.map((col) => (
+                        <Td key={col.header}>{col.render(row)}</Td>
+                      ))}
+                    </Tr>
                   ))}
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+                </Tbody>
+              </Table>
+            </div>
+            <div className="md:hidden">
+              <MobileCardList
+                rows={rows}
+                keyField={(_row, index) => index}
+                title={(row) => config.columns[0].render(row)}
+                fields={config.columns.slice(1).map((col) => ({ label: col.header, value: (row: unknown) => col.render(row) }))}
+                emptyMessage="No data for this report."
+              />
+            </div>
+          </>
         )}
       </Card>
     </div>

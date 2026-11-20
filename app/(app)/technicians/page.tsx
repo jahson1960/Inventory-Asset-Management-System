@@ -5,7 +5,10 @@ import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import { api, ApiError } from '@/lib/api-client';
 import type { DisplaySettingsRecord, Technician } from '@/lib/types';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { MobileCardList } from '@/components/ui/mobile-card-list';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -38,15 +41,25 @@ export default function TechniciansPage() {
     setModalOpen(true);
   }
 
+  const exportColumns = [
+    { header: 'Name', value: (t: Technician) => t.name },
+    { header: 'Phone', value: (t: Technician) => t.phone ?? '' },
+    { header: 'Email', value: (t: Technician) => t.email ?? '' },
+    { header: 'Status', value: (t: Technician) => (t.isActive ? 'Active' : 'Inactive') },
+  ];
+
   return (
     <div>
       <PageHeader
         title="Technicians"
         description="People assets can be sent to for repair or servicing."
         action={
-          <RequirePermission permission="technicians.manage">
-            <Button onClick={openCreate}>New Technician</Button>
-          </RequirePermission>
+          <div className="flex items-center gap-2">
+            <ExportMenu filename="technicians" columns={exportColumns} fetchRows={() => fetchAllForExport<Technician>('/technicians')} />
+            <RequirePermission permission="technicians.manage">
+              <Button onClick={openCreate}>New Technician</Button>
+            </RequirePermission>
+          </div>
         }
       />
 
@@ -60,41 +73,65 @@ export default function TechniciansPage() {
         ) : !technicians || technicians.length === 0 ? (
           <EmptyState message="No technicians yet." />
         ) : (
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>Name</Th>
-                <Th>Phone</Th>
-                <Th>Email</Th>
-                <Th>Status</Th>
-                <Th />
-              </Tr>
-            </Thead>
-            <Tbody>
-              {technicians.map((technician) => (
-                <Tr key={technician.id}>
-                  <Td className="font-medium text-slate-900">{technician.name}</Td>
-                  <Td>{technician.phone ?? '—'}</Td>
-                  <Td>{technician.email ?? '—'}</Td>
-                  <Td>
-                    <Badge tone={technician.isActive ? 'green' : 'neutral'}>
-                      {technician.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </Td>
-                  <Td>
-                    <RequirePermission permission="technicians.manage">
-                      <button
-                        onClick={() => openEdit(technician)}
-                        className="text-xs font-medium text-slate-600 hover:text-slate-900"
-                      >
-                        Edit
-                      </button>
-                    </RequirePermission>
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Name</Th>
+                    <Th>Phone</Th>
+                    <Th>Email</Th>
+                    <Th>Status</Th>
+                    <Th />
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {technicians.map((technician) => (
+                    <Tr key={technician.id}>
+                      <Td className="font-medium text-slate-900">{technician.name}</Td>
+                      <Td>{technician.phone ?? '—'}</Td>
+                      <Td>{technician.email ?? '—'}</Td>
+                      <Td>
+                        <Badge tone={technician.isActive ? 'green' : 'neutral'}>
+                          {technician.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </Td>
+                      <Td>
+                        <RequirePermission permission="technicians.manage">
+                          <button
+                            onClick={() => openEdit(technician)}
+                            className="text-xs font-medium text-slate-600 hover:text-slate-900"
+                          >
+                            Edit
+                          </button>
+                        </RequirePermission>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </div>
+            <div className="md:hidden">
+              <MobileCardList
+                rows={technicians}
+                keyField={(t) => t.id}
+                title={(t) => t.name}
+                badge={(t) => <Badge tone={t.isActive ? 'green' : 'neutral'}>{t.isActive ? 'Active' : 'Inactive'}</Badge>}
+                fields={[
+                  { label: 'Phone', value: (t) => t.phone ?? '—' },
+                  { label: 'Email', value: (t) => t.email ?? '—' },
+                ]}
+                actions={(t) => (
+                  <RequirePermission permission="technicians.manage">
+                    <button onClick={() => openEdit(t)} className="text-xs font-medium text-slate-600 hover:text-slate-900">
+                      Edit
+                    </button>
+                  </RequirePermission>
+                )}
+                emptyMessage="No technicians yet."
+              />
+            </div>
+          </>
         )}
       </Card>
       <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />

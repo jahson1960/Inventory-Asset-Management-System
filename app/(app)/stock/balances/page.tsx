@@ -5,6 +5,8 @@ import { useApi } from '@/hooks/use-api';
 import { api, ApiError } from '@/lib/api-client';
 import type { InventoryItem, LocationNode, Paginated, StockBalance, UnitOfMeasure } from '@/lib/types';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { MobileCardList } from '@/components/ui/mobile-card-list';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -23,15 +25,29 @@ export default function StockBalancesPage() {
   });
   const [receiptOpen, setReceiptOpen] = useState(false);
 
+  const exportColumns = [
+    { header: 'Item', value: (b: StockBalance) => b.item?.name ?? b.itemId },
+    { header: 'Location', value: (b: StockBalance) => b.location?.name ?? '' },
+    { header: 'Quantity', value: (b: StockBalance) => `${b.quantityOnHand} ${b.item?.baseUnit?.code ?? ''}`.trim() },
+    { header: 'Min level', value: (b: StockBalance) => `${b.item?.minStockLevel ?? ''} ${b.item?.baseUnit?.code ?? ''}`.trim() },
+    {
+      header: 'Status',
+      value: (b: StockBalance) => (Number(b.quantityOnHand) < Number(b.item?.minStockLevel ?? 0) ? 'Low stock' : 'OK'),
+    },
+  ];
+
   return (
     <div>
       <PageHeader
         title="Stock Balances"
         description="Current quantity on hand by item and store location."
         action={
-          <RequirePermission permission="stock.manage">
-            <Button onClick={() => setReceiptOpen(true)}>Receive Stock</Button>
-          </RequirePermission>
+          <div className="flex items-center gap-2">
+            <ExportMenu filename="stock-balances" columns={exportColumns} rows={balances ?? []} />
+            <RequirePermission permission="stock.manage">
+              <Button onClick={() => setReceiptOpen(true)}>Receive Stock</Button>
+            </RequirePermission>
+          </div>
         }
       />
 
@@ -50,37 +66,58 @@ export default function StockBalancesPage() {
         ) : !balances || balances.length === 0 ? (
           <EmptyState message="No stock balances recorded yet." />
         ) : (
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>Item</Th>
-                <Th>Location</Th>
-                <Th>Quantity</Th>
-                <Th>Min level</Th>
-                <Th>Status</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {balances.map((b) => {
-                const low = Number(b.quantityOnHand) < Number(b.item?.minStockLevel ?? 0);
-                return (
-                  <Tr key={b.id}>
-                    <Td className="font-medium text-slate-900">{b.item?.name ?? b.itemId}</Td>
-                    <Td>{b.location?.name ?? '—'}</Td>
-                    <Td>
-                      {b.quantityOnHand} {b.item?.baseUnit?.code}
-                    </Td>
-                    <Td>
-                      {b.item?.minStockLevel} {b.item?.baseUnit?.code}
-                    </Td>
-                    <Td>
-                      <Badge tone={low ? 'red' : 'green'}>{low ? 'Low stock' : 'OK'}</Badge>
-                    </Td>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Item</Th>
+                    <Th>Location</Th>
+                    <Th>Quantity</Th>
+                    <Th>Min level</Th>
+                    <Th>Status</Th>
                   </Tr>
-                );
-              })}
-            </Tbody>
-          </Table>
+                </Thead>
+                <Tbody>
+                  {balances.map((b) => {
+                    const low = Number(b.quantityOnHand) < Number(b.item?.minStockLevel ?? 0);
+                    return (
+                      <Tr key={b.id}>
+                        <Td className="font-medium text-slate-900">{b.item?.name ?? b.itemId}</Td>
+                        <Td>{b.location?.name ?? '—'}</Td>
+                        <Td>
+                          {b.quantityOnHand} {b.item?.baseUnit?.code}
+                        </Td>
+                        <Td>
+                          {b.item?.minStockLevel} {b.item?.baseUnit?.code}
+                        </Td>
+                        <Td>
+                          <Badge tone={low ? 'red' : 'green'}>{low ? 'Low stock' : 'OK'}</Badge>
+                        </Td>
+                      </Tr>
+                    );
+                  })}
+                </Tbody>
+              </Table>
+            </div>
+            <div className="md:hidden">
+              <MobileCardList
+                rows={balances}
+                keyField={(b) => b.id}
+                title={(b) => b.item?.name ?? b.itemId}
+                subtitle={(b) => b.location?.name ?? null}
+                badge={(b) => {
+                  const low = Number(b.quantityOnHand) < Number(b.item?.minStockLevel ?? 0);
+                  return <Badge tone={low ? 'red' : 'green'}>{low ? 'Low stock' : 'OK'}</Badge>;
+                }}
+                fields={[
+                  { label: 'Quantity', value: (b) => `${b.quantityOnHand} ${b.item?.baseUnit?.code ?? ''}`.trim() },
+                  { label: 'Min level', value: (b) => `${b.item?.minStockLevel ?? ''} ${b.item?.baseUnit?.code ?? ''}`.trim() },
+                ]}
+                emptyMessage="No stock balances recorded yet."
+              />
+            </div>
+          </>
         )}
       </Card>
 

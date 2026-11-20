@@ -6,7 +6,10 @@ import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import { api, ApiError, fileUrl, uploadFile } from '@/lib/api-client';
 import type { Branch, Department, DisplaySettingsRecord, LocationNode, Paginated } from '@/lib/types';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { MobileCardList } from '@/components/ui/mobile-card-list';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -69,12 +72,27 @@ export default function UsersPage() {
     }
   }
 
+  const exportColumns = [
+    { header: 'Staff No.', value: (u: UserRow) => u.staffNumber ?? '' },
+    { header: 'First Name', value: (u: UserRow) => u.firstName },
+    { header: 'Last Name', value: (u: UserRow) => u.lastName },
+    { header: 'Email', value: (u: UserRow) => u.email },
+    { header: 'Role', value: (u: UserRow) => u.role.replace('_', ' ') },
+    { header: 'Branch', value: (u: UserRow) => (u.branchId ? branchNameById.get(u.branchId) ?? '' : 'All branches') },
+    { header: 'Status', value: (u: UserRow) => (u.isActive ? 'Active' : 'Inactive') },
+  ];
+
   return (
     <div>
       <PageHeader
         title="Users"
         description="Login accounts and role assignments."
-        action={<Button onClick={() => setModalOpen(true)}>New User</Button>}
+        action={
+          <div className="flex items-center gap-2">
+            <ExportMenu filename="users" columns={exportColumns} fetchRows={() => fetchAllForExport<UserRow>('/users')} />
+            <Button onClick={() => setModalOpen(true)}>New User</Button>
+          </div>
+        }
       />
 
       <Card>
@@ -87,7 +105,9 @@ export default function UsersPage() {
         ) : !users || users.length === 0 ? (
           <EmptyState message="No users yet." />
         ) : (
-          <Table>
+          <>
+            <div className="hidden md:block">
+              <Table>
             <Thead>
               <Tr>
                 <Th>Staff No.</Th>
@@ -166,7 +186,51 @@ export default function UsersPage() {
                 </Tr>
               ))}
             </Tbody>
-          </Table>
+              </Table>
+            </div>
+            <div className="md:hidden">
+              <MobileCardList
+                rows={users}
+                keyField={(u) => u.id}
+                onRowClick={(u) => router.push(`/users/${u.id}`)}
+                title={(u) => `${u.firstName} ${u.lastName}`}
+                subtitle={(u) => u.jobTitle ?? u.email}
+                badge={(u) => <Badge tone={u.isActive ? 'green' : 'neutral'}>{u.isActive ? 'Active' : 'Inactive'}</Badge>}
+                fields={[
+                  { label: 'Staff No.', value: (u) => u.staffNumber ?? '—' },
+                  { label: 'Role', value: (u) => u.role.replace('_', ' ') },
+                  { label: 'Branch', value: (u) => (u.branchId ? branchNameById.get(u.branchId) ?? '—' : 'All branches') },
+                  { label: 'Email', value: (u) => u.email },
+                ]}
+                actions={(u) => (
+                  <>
+                    <button
+                      onClick={() => setEditingUser(u)}
+                      className="text-xs font-medium text-slate-600 hover:text-slate-900"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => resetPassword(u)}
+                      className="text-xs font-medium text-slate-600 hover:text-slate-900"
+                    >
+                      Reset password
+                    </button>
+                    {u.isActive ? (
+                      <button onClick={() => deactivate(u.id)} className="text-xs font-medium text-red-600 hover:text-red-800">
+                        Deactivate
+                      </button>
+                    ) : (
+                      <button onClick={() => activate(u.id)} className="text-xs font-medium text-emerald-600 hover:text-emerald-800">
+                        Activate
+                      </button>
+                    )}
+                  </>
+                )}
+                emptyMessage="No users yet."
+              />
+            </div>
+          </>
         )}
       </Card>
       <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />

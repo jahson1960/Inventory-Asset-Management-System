@@ -5,7 +5,10 @@ import { useApi } from '@/hooks/use-api';
 import { usePaginatedApi } from '@/hooks/use-paginated-api';
 import { api, ApiError } from '@/lib/api-client';
 import type { Branch, DisplaySettingsRecord } from '@/lib/types';
+import { fetchAllForExport } from '@/lib/export-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { MobileCardList } from '@/components/ui/mobile-card-list';
 import { Card } from '@/components/ui/card';
 import { Table, Thead, Tbody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -35,15 +38,25 @@ export default function BranchesPage() {
     setModalOpen(true);
   }
 
+  const exportColumns = [
+    { header: 'Name', value: (b: Branch) => b.name },
+    { header: 'Code', value: (b: Branch) => b.code },
+    { header: 'Address', value: (b: Branch) => b.address ?? '' },
+    { header: 'Status', value: (b: Branch) => (b.isActive ? 'Active' : 'Inactive') },
+  ];
+
   return (
     <div>
       <PageHeader
         title="Branches"
         description="School locations that own their own departments, stores and staff."
         action={
-          <RequirePermission permission="branches.manage">
-            <Button onClick={openCreate}>New Branch</Button>
-          </RequirePermission>
+          <div className="flex items-center gap-2">
+            <ExportMenu filename="branches" columns={exportColumns} fetchRows={() => fetchAllForExport<Branch>('/branches')} />
+            <RequirePermission permission="branches.manage">
+              <Button onClick={openCreate}>New Branch</Button>
+            </RequirePermission>
+          </div>
         }
       />
 
@@ -57,41 +70,63 @@ export default function BranchesPage() {
         ) : !branches || branches.length === 0 ? (
           <EmptyState message="No branches yet." />
         ) : (
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>Name</Th>
-                <Th>Code</Th>
-                <Th>Address</Th>
-                <Th>Status</Th>
-                <Th />
-              </Tr>
-            </Thead>
-            <Tbody>
-              {branches.map((branch) => (
-                <Tr key={branch.id}>
-                  <Td className="font-medium text-slate-900">{branch.name}</Td>
-                  <Td>{branch.code}</Td>
-                  <Td>{branch.address ?? '—'}</Td>
-                  <Td>
-                    <Badge tone={branch.isActive ? 'green' : 'neutral'}>
-                      {branch.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </Td>
-                  <Td>
-                    <RequirePermission permission="branches.manage">
-                      <button
-                        onClick={() => openEdit(branch)}
-                        className="text-xs font-medium text-slate-600 hover:text-slate-900"
-                      >
-                        Edit
-                      </button>
-                    </RequirePermission>
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Name</Th>
+                    <Th>Code</Th>
+                    <Th>Address</Th>
+                    <Th>Status</Th>
+                    <Th />
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {branches.map((branch) => (
+                    <Tr key={branch.id}>
+                      <Td className="font-medium text-slate-900">{branch.name}</Td>
+                      <Td>{branch.code}</Td>
+                      <Td>{branch.address ?? '—'}</Td>
+                      <Td>
+                        <Badge tone={branch.isActive ? 'green' : 'neutral'}>
+                          {branch.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </Td>
+                      <Td>
+                        <RequirePermission permission="branches.manage">
+                          <button
+                            onClick={() => openEdit(branch)}
+                            className="text-xs font-medium text-slate-600 hover:text-slate-900"
+                          >
+                            Edit
+                          </button>
+                        </RequirePermission>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </div>
+            <div className="md:hidden">
+              <MobileCardList
+                rows={branches}
+                keyField={(branch) => branch.id}
+                title={(branch) => branch.name}
+                subtitle={(branch) => branch.code}
+                badge={(branch) => <Badge tone={branch.isActive ? 'green' : 'neutral'}>{branch.isActive ? 'Active' : 'Inactive'}</Badge>}
+                fields={[{ label: 'Address', value: (branch) => branch.address ?? '—' }]}
+                actions={(branch) => (
+                  <RequirePermission permission="branches.manage">
+                    <button onClick={() => openEdit(branch)} className="text-xs font-medium text-slate-600 hover:text-slate-900">
+                      Edit
+                    </button>
+                  </RequirePermission>
+                )}
+                emptyMessage="No branches yet."
+              />
+            </div>
+          </>
         )}
       </Card>
       <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
