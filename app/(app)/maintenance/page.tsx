@@ -16,6 +16,7 @@ import { ExpandableList } from '@/components/ui/expandable-list';
 import { useListViewMode } from '@/hooks/use-list-view-mode';
 import { ViewModeToggle } from '@/components/ui/view-mode-toggle';
 import { Pagination } from '@/components/ui/pagination';
+import { RequirePermission } from '@/components/require-permission';
 
 export default function MaintenancePage() {
   const { data: displaySettings } = useApi<DisplaySettingsRecord>('/settings/display');
@@ -40,6 +41,11 @@ export default function MaintenancePage() {
           <div className="flex items-center gap-2">
             <ViewModeToggle mode={mode} onChange={setMode} />
             <ExportMenu filename="maintenance-requests" columns={exportColumns} fetchRows={() => fetchAllForExport<MaintenanceRequestRecord>('/maintenance-requests')} />
+            <RequirePermission permission="maintenance.resolve">
+              <Link href="/maintenance/log/new">
+                <Button variant="secondary">Log Maintenance</Button>
+              </Link>
+            </RequirePermission>
             <Link href="/maintenance/new">
               <Button>Report Fault</Button>
             </Link>

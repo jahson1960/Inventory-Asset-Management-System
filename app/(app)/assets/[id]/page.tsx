@@ -154,6 +154,13 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
                 </Button>
               </RequirePermission>
             )}
+            <RequirePermission permission="maintenance.resolve">
+              <Link href={`/maintenance/log/new?assetId=${asset.id}`}>
+                <Button variant="secondary" size="sm">
+                  Log Maintenance
+                </Button>
+              </Link>
+            </RequirePermission>
             <RequirePermission permission="assets.manage">
               <Link href={`/assets/${asset.id}/edit`}>
                 <Button variant="secondary" size="sm">
